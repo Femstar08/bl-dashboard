@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useCallback, CSSProperties } from 'react'
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronRight,
   Plus,
@@ -19,26 +17,19 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 
-/* ─── Design Tokens ─── */
-const NAVY = '#0F1B35'
-const NAVY_MID = '#162240'
-const NAVY_CARD = '#1E2F52'
-const TEAL = '#53E9C5'
-const SLATE = '#5C6478'
-const LIGHT = '#E8EDF5'
-const BORDER = 'rgba(83,233,197,0.15)'
+/* ─── Design Tokens (stage-specific only) ─── */
 const AMBER = '#F59E0B'
 const GREEN = '#34D399'
 const RED = '#F87171'
 const PURPLE = '#7C8CF8'
 
 const STAGE_COLORS: Record<string, string> = {
-  Identified: SLATE,
+  Identified: '#5C6478',
   Contacted: PURPLE,
   Meeting: AMBER,
   DD: '#F97316',
   Committed: GREEN,
-  Closed: TEAL,
+  Closed: '#53E9C5',
   Passed: RED,
 }
 
@@ -86,7 +77,6 @@ interface InvestorFormData {
 const STAGES = ['Identified', 'Contacted', 'Meeting', 'DD', 'Committed', 'Closed', 'Passed'] as const
 const ACTIVE_STAGES = ['Identified', 'Contacted', 'Meeting', 'DD', 'Committed', 'Closed'] as const
 const SOURCES = ['Warm Intro', 'Cold', 'Event', 'LinkedIn', 'Referral'] as const
-const TARGET = 120000
 
 const emptyForm: InvestorFormData = {
   name: '',
@@ -121,9 +111,9 @@ function dateStatus(followUp: string | null): 'overdue' | 'soon' | 'normal' | nu
   if (!followUp) return null
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const target = new Date(followUp)
-  target.setHours(0, 0, 0, 0)
-  const diff = target.getTime() - today.getTime()
+  const t = new Date(followUp)
+  t.setHours(0, 0, 0, 0)
+  const diff = t.getTime() - today.getTime()
   const days = diff / (1000 * 60 * 60 * 24)
   if (days < 0) return 'overdue'
   if (days <= 3) return 'soon'
@@ -135,8 +125,8 @@ function Card({ children, style }: { children: React.ReactNode; style?: CSSPrope
   return (
     <div
       style={{
-        background: NAVY_MID,
-        border: `1px solid ${BORDER}`,
+        background: 'var(--bg-mid)',
+        border: '1px solid var(--border)',
         borderRadius: 12,
         padding: 20,
         ...style,
@@ -154,7 +144,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
         textTransform: 'uppercase',
         fontSize: 11,
         letterSpacing: 1.5,
-        color: SLATE,
+        color: 'var(--text-muted)',
         margin: '0 0 12px 0',
         fontWeight: 600,
       }}
@@ -211,11 +201,11 @@ function Btn({
     transition: 'all .15s',
     border: 'none',
     background: 'transparent',
-    color: LIGHT,
+    color: 'var(--text-primary)',
   }
   const variants: Record<string, CSSProperties> = {
-    ghost: { border: `1px solid ${BORDER}`, color: LIGHT },
-    teal: { border: `1px solid ${TEAL}`, color: TEAL },
+    ghost: { border: '1px solid var(--border)', color: 'var(--text-primary)' },
+    teal: { border: '1px solid var(--accent)', color: 'var(--accent)' },
     danger: { border: `1px solid ${RED}`, color: RED },
     amber: { border: `1px solid ${AMBER}`, color: AMBER },
   }
@@ -257,9 +247,9 @@ function Input({
         width: '100%',
         padding: '9px 12px',
         borderRadius: 8,
-        border: `1px solid ${BORDER}`,
-        background: NAVY_CARD,
-        color: LIGHT,
+        border: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
         fontSize: 14,
         outline: 'none',
         boxSizing: 'border-box',
@@ -288,9 +278,9 @@ function Select({
         width: '100%',
         padding: '9px 12px',
         borderRadius: 8,
-        border: `1px solid ${BORDER}`,
-        background: NAVY_CARD,
-        color: LIGHT,
+        border: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
         fontSize: 14,
         outline: 'none',
         boxSizing: 'border-box',
@@ -298,7 +288,7 @@ function Select({
       }}
     >
       {placeholder && (
-        <option value="" style={{ color: SLATE }}>
+        <option value="" style={{ color: 'var(--text-muted)' }}>
           {placeholder}
         </option>
       )}
@@ -332,9 +322,9 @@ function Textarea({
         width: '100%',
         padding: '9px 12px',
         borderRadius: 8,
-        border: `1px solid ${BORDER}`,
-        background: NAVY_CARD,
-        color: LIGHT,
+        border: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
         fontSize: 14,
         outline: 'none',
         boxSizing: 'border-box',
@@ -349,7 +339,7 @@ function Textarea({
 function FieldLabel({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <label style={{ fontSize: 12, color: SLATE, fontWeight: 500 }}>{label}</label>
+      <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{label}</label>
       {children}
     </div>
   )
@@ -375,6 +365,9 @@ export default function AngelPage() {
   })
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({})
   const [mutationError, setMutationError] = useState<string | null>(null)
+  const [target, setTarget] = useState(120000)
+  const [editingTarget, setEditingTarget] = useState(false)
+  const [targetInput, setTargetInput] = useState('')
 
   /* ─── Load ─── */
   const loadInvestors = useCallback(async () => {
@@ -387,6 +380,13 @@ export default function AngelPage() {
         .order('created_at', { ascending: false })
       if (err) throw err
       setInvestors((data as AngelInvestor[]) || [])
+
+      const { data: settingsData } = await supabase
+        .from('bl_settings')
+        .select('*')
+        .eq('key', 'angel_raise_target')
+        .single()
+      if (settingsData) setTarget(Number(settingsData.value) || 120000)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to load investors'
       setError(msg)
@@ -399,6 +399,18 @@ export default function AngelPage() {
     loadInvestors()
   }, [loadInvestors])
 
+  /* ─── Save target ─── */
+  const handleSaveTarget = async () => {
+    const newTarget = Number(targetInput)
+    if (!newTarget || newTarget <= 0) return
+    setTarget(newTarget)
+    setEditingTarget(false)
+    await supabase
+      .from('bl_settings')
+      .update({ value: String(newTarget), updated_at: new Date().toISOString() })
+      .eq('key', 'angel_raise_target')
+  }
+
   /* ─── Calculations ─── */
   const committed = investors
     .filter((i) => i.stage === 'Committed' || i.stage === 'Closed')
@@ -406,9 +418,9 @@ export default function AngelPage() {
   const potential = investors
     .filter((i) => i.stage !== 'Passed')
     .reduce((s, i) => s + (i.amount_potential || 0), 0)
-  const remaining = Math.max(0, TARGET - committed)
-  const pctCommitted = Math.min(100, (committed / TARGET) * 100)
-  const pctPotential = Math.min(100, (potential / TARGET) * 100)
+  const remaining = Math.max(0, target - committed)
+  const pctCommitted = Math.min(100, (committed / target) * 100)
+  const pctPotential = Math.min(100, (potential / target) * 100)
 
   const pipelineCount = investors.filter((i) => i.stage !== 'Passed').length
   const meetingPlusStages = ['Meeting', 'DD', 'Committed', 'Closed']
@@ -728,30 +740,30 @@ export default function AngelPage() {
           alignItems: 'center',
         }}
       >
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: LIGHT, fontSize: 13, cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={form.deck_sent}
             onChange={(e) => setForm((p) => ({ ...p, deck_sent: e.target.checked }))}
-            style={{ accentColor: TEAL }}
+            style={{ accentColor: 'var(--accent)' }}
           />
           Deck sent
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: LIGHT, fontSize: 13, cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={form.financials_sent}
             onChange={(e) => setForm((p) => ({ ...p, financials_sent: e.target.checked }))}
-            style={{ accentColor: TEAL }}
+            style={{ accentColor: 'var(--accent)' }}
           />
           Financials sent
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: LIGHT, fontSize: 13, cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={form.term_sheet_sent}
             onChange={(e) => setForm((p) => ({ ...p, term_sheet_sent: e.target.checked }))}
-            style={{ accentColor: TEAL }}
+            style={{ accentColor: 'var(--accent)' }}
           />
           Term sheet sent
         </label>
@@ -761,7 +773,7 @@ export default function AngelPage() {
 
   /* ─── Investor Card (display mode) ─── */
   const renderInvestorCard = (inv: AngelInvestor) => {
-    const stageColor = STAGE_COLORS[inv.stage] || SLATE
+    const stageColor = STAGE_COLORS[inv.stage] || '#5C6478'
     const ds = dateStatus(inv.follow_up_date)
     const canAdvance =
       inv.stage !== 'Closed' &&
@@ -773,7 +785,7 @@ export default function AngelPage() {
       <div
         key={inv.id}
         style={{
-          background: NAVY_CARD,
+          background: 'var(--bg-card)',
           borderRadius: 10,
           borderLeft: `4px solid ${stageColor}`,
           padding: 18,
@@ -785,32 +797,32 @@ export default function AngelPage() {
         {/* Row 1 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: LIGHT }}>{inv.name}</span>
-            {inv.company && <span style={{ fontSize: 14, color: SLATE }}>{inv.company}</span>}
+            <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{inv.name}</span>
+            {inv.company && <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{inv.company}</span>}
           </div>
           {inv.source && <Tag label={inv.source} color={PURPLE} />}
         </div>
 
-        {/* Row 2 — amounts */}
+        {/* Row 2 -- amounts */}
         {(inv.amount_potential || inv.amount_committed) && (
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>
             {inv.amount_potential != null && inv.amount_potential > 0 && (
               <span style={{ color: AMBER, fontWeight: 600 }}>{fmtCurrency(inv.amount_potential)}</span>
             )}
             {inv.amount_committed != null && inv.amount_committed > 0 && (
-              <span style={{ color: TEAL, fontWeight: 600 }}>{fmtCurrency(inv.amount_committed)} committed</span>
+              <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{fmtCurrency(inv.amount_committed)} committed</span>
             )}
           </div>
         )}
 
-        {/* Row 3 — next action + follow-up */}
+        {/* Row 3 -- next action + follow-up */}
         {(inv.next_action || inv.follow_up_date) && (
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, alignItems: 'center' }}>
-            {inv.next_action && <span style={{ color: LIGHT }}>{inv.next_action}</span>}
+            {inv.next_action && <span style={{ color: 'var(--text-primary)' }}>{inv.next_action}</span>}
             {inv.follow_up_date && (
               <span
                 style={{
-                  color: ds === 'overdue' ? RED : ds === 'soon' ? AMBER : SLATE,
+                  color: ds === 'overdue' ? RED : ds === 'soon' ? AMBER : 'var(--text-muted)',
                   background: ds === 'overdue' ? RED + '22' : 'transparent',
                   padding: ds === 'overdue' ? '2px 8px' : 0,
                   borderRadius: 6,
@@ -824,20 +836,20 @@ export default function AngelPage() {
           </div>
         )}
 
-        {/* Row 4 — document checklist */}
+        {/* Row 4 -- document checklist */}
         <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
-          <span style={{ color: inv.deck_sent ? TEAL : SLATE }}>
+          <span style={{ color: inv.deck_sent ? 'var(--accent)' : 'var(--text-muted)' }}>
             Deck {inv.deck_sent ? '\u2713' : '\u2717'}
           </span>
-          <span style={{ color: inv.financials_sent ? TEAL : SLATE }}>
+          <span style={{ color: inv.financials_sent ? 'var(--accent)' : 'var(--text-muted)' }}>
             Financials {inv.financials_sent ? '\u2713' : '\u2717'}
           </span>
-          <span style={{ color: inv.term_sheet_sent ? TEAL : SLATE }}>
+          <span style={{ color: inv.term_sheet_sent ? 'var(--accent)' : 'var(--text-muted)' }}>
             Term sheet {inv.term_sheet_sent ? '\u2713' : '\u2717'}
           </span>
         </div>
 
-        {/* Row 5 — action buttons */}
+        {/* Row 5 -- action buttons */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <Btn variant="ghost" onClick={() => startEdit(inv)}>
             <Edit3 size={14} /> Edit
@@ -862,7 +874,7 @@ export default function AngelPage() {
               style={{
                 background: 'none',
                 border: 'none',
-                color: TEAL,
+                color: 'var(--accent)',
                 fontSize: 12,
                 cursor: 'pointer',
                 padding: 0,
@@ -872,7 +884,7 @@ export default function AngelPage() {
               {expandedNotes[inv.id] ? 'Hide notes' : 'Show notes'}
             </button>
             {expandedNotes[inv.id] && (
-              <p style={{ color: SLATE, fontSize: 13, margin: '6px 0 0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '6px 0 0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                 {inv.notes}
               </p>
             )}
@@ -888,7 +900,7 @@ export default function AngelPage() {
       <div
         key={inv.id}
         style={{
-          background: NAVY_CARD,
+          background: 'var(--bg-card)',
           borderRadius: 10,
           borderLeft: `4px solid ${AMBER}`,
           padding: 18,
@@ -903,7 +915,7 @@ export default function AngelPage() {
             variant="teal"
             onClick={handleEditSave}
             disabled={editSubmitting || !editForm.name.trim()}
-            style={{ background: TEAL + '18' }}
+            style={{ background: 'rgba(83,233,197,0.09)' }}
           >
             {editSubmitting ? 'Saving...' : 'Save'}
           </Btn>
@@ -922,30 +934,7 @@ export default function AngelPage() {
      RENDER
      ═══════════════════════════════════════════ */
   return (
-    <div style={{ minHeight: '100vh', background: NAVY, color: LIGHT, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* Header */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          background: NAVY,
-          borderBottom: `1px solid ${BORDER}`,
-          padding: '16px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
-        <Link href="/" style={{ color: TEAL, display: 'flex', alignItems: 'center' }}>
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: LIGHT }}>Angel Round</h1>
-          <p style={{ margin: 0, fontSize: 13, color: SLATE }}>£120,000 target raise</p>
-        </div>
-      </header>
-
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'inherit' }}>
       <main style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px 60px' }}>
         {/* Mutation error banner */}
         {mutationError && (
@@ -973,7 +962,7 @@ export default function AngelPage() {
 
         {/* Loading / Error */}
         {loading && (
-          <div style={{ textAlign: 'center', padding: 60, color: SLATE }}>Loading investors...</div>
+          <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>Loading investors...</div>
         )}
         {error && !loading && (
           <div
@@ -995,12 +984,63 @@ export default function AngelPage() {
             {/* ── Section A: Raise Progress ── */}
             <section style={{ marginBottom: 32 }}>
               <SectionTitle>Raise Progress</SectionTitle>
+
+              {/* Editable target */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                {editingTarget ? (
+                  <>
+                    <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Target: £</span>
+                    <input
+                      type="number"
+                      value={targetInput}
+                      onChange={(e) => setTargetInput(e.target.value)}
+                      style={{
+                        width: 120,
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-card)',
+                        color: 'var(--text-primary)',
+                        fontSize: 14,
+                        outline: 'none',
+                      }}
+                    />
+                    <Btn variant="teal" onClick={handleSaveTarget} style={{ padding: '4px 10px', fontSize: 12 }}>
+                      Save
+                    </Btn>
+                    <Btn variant="ghost" onClick={() => setEditingTarget(false)} style={{ padding: '4px 10px', fontSize: 12 }}>
+                      Cancel
+                    </Btn>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 600 }}>
+                      Target: {fmtCurrency(target)}
+                    </span>
+                    <button
+                      onClick={() => { setTargetInput(String(target)); setEditingTarget(true) }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--accent)',
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        textDecoration: 'underline',
+                        padding: 0,
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
+              </div>
+
               {/* Progress bar */}
               <div
                 style={{
                   width: '100%',
                   height: 24,
-                  background: NAVY_CARD,
+                  background: 'var(--bg-card)',
                   borderRadius: 12,
                   overflow: 'hidden',
                   position: 'relative',
@@ -1027,7 +1067,7 @@ export default function AngelPage() {
                     left: 0,
                     height: '100%',
                     width: `${Math.min(100, pctCommitted)}%`,
-                    background: TEAL,
+                    background: 'var(--accent)',
                     borderRadius: 12,
                     transition: 'width .4s ease',
                   }}
@@ -1045,7 +1085,7 @@ export default function AngelPage() {
                     justifyContent: 'center',
                     fontSize: 12,
                     fontWeight: 700,
-                    color: pctCommitted > 15 ? NAVY : LIGHT,
+                    color: pctCommitted > 15 ? 'var(--bg-primary)' : 'var(--text-primary)',
                     pointerEvents: 'none',
                   }}
                 >
@@ -1064,24 +1104,24 @@ export default function AngelPage() {
               >
                 <Card style={{ padding: 14, textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Users size={16} color={TEAL} />
-                    <span style={{ fontSize: 22, fontWeight: 700, color: LIGHT }}>{pipelineCount}</span>
+                    <Users size={16} color="var(--accent)" />
+                    <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{pipelineCount}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: SLATE, margin: '4px 0 0' }}>investors in pipeline</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>investors in pipeline</p>
                 </Card>
                 <Card style={{ padding: 14, textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <CalendarClock size={16} color={AMBER} />
-                    <span style={{ fontSize: 22, fontWeight: 700, color: LIGHT }}>{meetingsBooked}</span>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{meetingsBooked}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: SLATE, margin: '4px 0 0' }}>meetings booked</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>meetings booked</p>
                 </Card>
                 <Card style={{ padding: 14, textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <CheckCircle2 size={16} color={GREEN} />
-                    <span style={{ fontSize: 22, fontWeight: 700, color: LIGHT }}>{committedCount}</span>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{committedCount}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: SLATE, margin: '4px 0 0' }}>committed</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>committed</p>
                 </Card>
               </div>
 
@@ -1096,9 +1136,9 @@ export default function AngelPage() {
                   fontSize: 14,
                 }}
               >
-                <span style={{ color: TEAL, fontWeight: 600 }}>{fmtCurrency(committed)} committed</span>
+                <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{fmtCurrency(committed)} committed</span>
                 <span style={{ color: AMBER, fontWeight: 600 }}>{fmtCurrency(potential)} potential</span>
-                <span style={{ color: SLATE, fontWeight: 600 }}>{fmtCurrency(remaining)} remaining</span>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{fmtCurrency(remaining)} remaining</span>
               </div>
             </section>
 
@@ -1122,7 +1162,7 @@ export default function AngelPage() {
                         variant="teal"
                         type="submit"
                         disabled={addSubmitting || !addForm.name.trim()}
-                        style={{ background: TEAL + '18' }}
+                        style={{ background: 'rgba(83,233,197,0.09)' }}
                       >
                         {addSubmitting ? 'Adding...' : 'Add Investor'}
                       </Btn>
@@ -1138,8 +1178,8 @@ export default function AngelPage() {
 
               {investors.length === 0 && (
                 <Card style={{ textAlign: 'center', padding: 40 }}>
-                  <FileText size={32} color={SLATE} style={{ margin: '0 auto 12px' }} />
-                  <p style={{ color: SLATE, fontSize: 15, margin: 0 }}>
+                  <FileText size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ color: 'var(--text-muted)', fontSize: 15, margin: 0 }}>
                     No investors added yet. Click &lsquo;+ Add Investor&rsquo; to start tracking your angel round.
                   </p>
                 </Card>
@@ -1148,7 +1188,7 @@ export default function AngelPage() {
               {STAGES.map((stage) => {
                 const stageInvestors = grouped[stage]
                 if (stageInvestors.length === 0) return null
-                const stageColor = STAGE_COLORS[stage] || SLATE
+                const stageColor = STAGE_COLORS[stage] || '#5C6478'
                 const expanded = expandedStages[stage] ?? true
 
                 return (
@@ -1168,9 +1208,9 @@ export default function AngelPage() {
                       }}
                     >
                       {expanded ? (
-                        <ChevronDown size={16} color={LIGHT} />
+                        <ChevronDown size={16} color="var(--text-primary)" />
                       ) : (
-                        <ChevronRight size={16} color={LIGHT} />
+                        <ChevronRight size={16} color="var(--text-primary)" />
                       )}
                       <span
                         style={{
@@ -1181,7 +1221,7 @@ export default function AngelPage() {
                           flexShrink: 0,
                         }}
                       />
-                      <span style={{ fontSize: 15, fontWeight: 700, color: LIGHT }}>{stage}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{stage}</span>
                       <span
                         style={{
                           fontSize: 12,
