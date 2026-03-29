@@ -1,38 +1,18 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { PROSPECT_STAGES, STAGE_COLORS, NEXT_STAGE, type ProspectStage } from '@/lib/tokens'
 import {
-  ArrowLeft, Plus, Search, CheckCircle, AlertCircle, Users,
+  Plus, Search, CheckCircle, AlertCircle, Users,
   ChevronDown, ChevronRight, ExternalLink, Clock, X, Edit2, Linkedin
 } from 'lucide-react'
-import Link from 'next/link'
 
 // ── DESIGN TOKENS ───────────────────────────────────────────────
-const NAVY = '#0F1B35'
-const NAVY_MID = '#162240'
-const NAVY_CARD = '#1E2F52'
-const TEAL = '#53E9C5'
-const SLATE = '#5C6478'
-const LIGHT = '#E8EDF5'
-const BORDER = 'rgba(83,233,197,0.15)'
 const AMBER = '#F59E0B'
 const GREEN = '#34D399'
 const RED = '#F87171'
 const PURPLE = '#7C8CF8'
 const ORANGE = '#F97316'
-
-const STAGE_COLORS: Record<string, string> = {
-  Identified: SLATE,
-  Contacted: PURPLE,
-  Meeting: AMBER,
-  DD: ORANGE,
-  Committed: GREEN,
-  Signed: TEAL,
-  Dead: RED,
-  Passed: RED,
-}
-
-const STAGE_ORDER = ['Identified', 'Contacted', 'Meeting', 'DD', 'Committed', 'Signed'] as const
 
 const getMonday = (date: Date): string => {
   const d = new Date(date)
@@ -142,8 +122,8 @@ function Btn({
     background: 'transparent',
   }
   const variants: Record<string, React.CSSProperties> = {
-    ghost: { borderColor: BORDER, color: LIGHT },
-    teal: { borderColor: TEAL, color: TEAL },
+    ghost: { borderColor: 'var(--border)', color: 'var(--text-primary)' },
+    teal: { borderColor: 'var(--accent)', color: 'var(--accent)' },
     danger: { borderColor: RED + '66', color: RED },
     amber: { borderColor: AMBER + '66', color: AMBER },
     purple: { borderColor: PURPLE + '66', color: PURPLE },
@@ -159,8 +139,8 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   return (
     <div
       style={{
-        background: NAVY_MID,
-        border: `1px solid ${BORDER}`,
+        background: 'var(--bg-mid)',
+        border: '1px solid var(--border)',
         borderRadius: 12,
         padding: 20,
         ...style,
@@ -179,7 +159,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
         fontWeight: 600,
         letterSpacing: '0.1em',
         textTransform: 'uppercase' as const,
-        color: SLATE,
+        color: 'var(--text-muted)',
         marginBottom: 16,
       }}
     >
@@ -202,10 +182,10 @@ function Input(props: {
       placeholder={props.placeholder}
       onChange={(e) => props.onChange(e.target.value)}
       style={{
-        background: NAVY_CARD,
-        border: `1px solid ${BORDER}`,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
         borderRadius: 8,
-        color: LIGHT,
+        color: 'var(--text-primary)',
         padding: '8px 12px',
         fontSize: 13,
         width: '100%',
@@ -227,10 +207,10 @@ function Select(props: {
       value={props.value}
       onChange={(e) => props.onChange(e.target.value)}
       style={{
-        background: NAVY_CARD,
-        border: `1px solid ${BORDER}`,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
         borderRadius: 8,
-        color: LIGHT,
+        color: 'var(--text-primary)',
         padding: '8px 12px',
         fontSize: 13,
         width: '100%',
@@ -462,7 +442,7 @@ export default function GrowthPage() {
 
   const acceptedThisWeek = prospects.filter(
     (p) =>
-      (p.status === 'Accepted' || p.status === 'Contacted') &&
+      (p.status === 'Connected' || p.status === 'Connection Sent') &&
       p.updated_at >= monday
   ).length
 
@@ -488,8 +468,8 @@ export default function GrowthPage() {
       <div
         style={{
           minHeight: '100vh',
-          background: NAVY,
-          color: LIGHT,
+          background: 'var(--bg-primary)',
+          color: 'var(--text-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -501,15 +481,14 @@ export default function GrowthPage() {
             style={{
               width: 32,
               height: 32,
-              border: `3px solid ${BORDER}`,
-              borderTopColor: TEAL,
+              border: '3px solid var(--border)',
+              borderTopColor: 'var(--accent)',
               borderRadius: '50%',
               animation: 'spin 0.8s linear infinite',
               margin: '0 auto 16px',
             }}
           />
-          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-          <p style={{ color: SLATE }}>Loading growth data...</p>
+          <p style={{ color: 'var(--text-muted)' }}>Loading growth data...</p>
         </div>
       </div>
     )
@@ -519,35 +498,11 @@ export default function GrowthPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: NAVY,
-        color: LIGHT,
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+        fontFamily: 'inherit',
       }}
     >
-      {/* ── HEADER ──────────────────────────────────────────── */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          background: NAVY,
-          borderBottom: `1px solid ${BORDER}`,
-          padding: '14px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
-        <Link href="/" style={{ color: SLATE, display: 'flex' }}>
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 16 }}>Beacon &amp; Ledger</div>
-          <div style={{ fontSize: 12, color: TEAL, fontWeight: 500 }}>Growth</div>
-        </div>
-      </header>
-
       {error && (
         <div
           style={{
@@ -591,17 +546,17 @@ export default function GrowthPage() {
                 alignItems: 'center',
                 gap: 8,
                 padding: '12px 20px',
-                background: NAVY_CARD,
+                background: 'var(--bg-card)',
                 borderRadius: 10,
                 flex: 1,
                 minWidth: 200,
               }}
             >
-              <AlertCircle size={18} color={overdueCount > 0 ? RED : SLATE} />
-              <span style={{ fontSize: 22, fontWeight: 700, color: overdueCount > 0 ? RED : LIGHT }}>
+              <AlertCircle size={18} color={overdueCount > 0 ? RED : 'var(--text-muted)'} />
+              <span style={{ fontSize: 22, fontWeight: 700, color: overdueCount > 0 ? RED : 'var(--text-primary)' }}>
                 {overdueCount}
               </span>
-              <span style={{ fontSize: 13, color: SLATE }}>follow-ups overdue</span>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>follow-ups overdue</span>
             </div>
             <div
               style={{
@@ -609,15 +564,15 @@ export default function GrowthPage() {
                 alignItems: 'center',
                 gap: 8,
                 padding: '12px 20px',
-                background: NAVY_CARD,
+                background: 'var(--bg-card)',
                 borderRadius: 10,
                 flex: 1,
                 minWidth: 200,
               }}
             >
-              <Users size={18} color={TEAL} />
+              <Users size={18} color={'var(--accent)'} />
               <span style={{ fontSize: 22, fontWeight: 700 }}>{newProspectsCount}</span>
-              <span style={{ fontSize: 13, color: SLATE }}>new prospects</span>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>new prospects</span>
             </div>
             <div
               style={{
@@ -625,7 +580,7 @@ export default function GrowthPage() {
                 alignItems: 'center',
                 gap: 8,
                 padding: '12px 20px',
-                background: NAVY_CARD,
+                background: 'var(--bg-card)',
                 borderRadius: 10,
                 flex: 1,
                 minWidth: 200,
@@ -633,7 +588,7 @@ export default function GrowthPage() {
             >
               <CheckCircle size={18} color={GREEN} />
               <span style={{ fontSize: 22, fontWeight: 700 }}>{acceptedThisWeek}</span>
-              <span style={{ fontSize: 13, color: SLATE }}>accepted this week</span>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>accepted this week</span>
             </div>
           </div>
         </Card>
@@ -661,8 +616,8 @@ export default function GrowthPage() {
                   gap: 12,
                 }}
               >
-                <CheckCircle size={28} color={TEAL} />
-                <span style={{ color: TEAL, fontSize: 14 }}>
+                <CheckCircle size={28} color={'var(--accent)'} />
+                <span style={{ color: 'var(--accent)', fontSize: 14 }}>
                   You&apos;re all caught up today
                 </span>
               </Card>
@@ -680,7 +635,7 @@ export default function GrowthPage() {
                           <Select
                             value={editForm.status || ''}
                             onChange={(v) => setEditForm((f) => ({ ...f, status: v }))}
-                            options={[...STAGE_ORDER, 'Dead', 'Passed'].map((s) => ({
+                            options={PROSPECT_STAGES.map((s) => ({
                               value: s,
                               label: s,
                             }))}
@@ -724,11 +679,11 @@ export default function GrowthPage() {
                           {p.contact_name || p.company_name || 'Unknown'}
                         </div>
                         {p.contact_name && p.company_name && p.contact_name !== p.company_name && (
-                          <div style={{ fontSize: 12, color: SLATE }}>{p.company_name}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.company_name}</div>
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <Tag label={p.status} color={STAGE_COLORS[p.status] || SLATE} />
+                        <Tag label={p.status} color={STAGE_COLORS[p.status as ProspectStage] || 'var(--text-muted)'} />
                         <span
                           style={{
                             fontSize: 12,
@@ -740,7 +695,7 @@ export default function GrowthPage() {
                         </span>
                       </div>
                       {p.next_action && (
-                        <div style={{ fontSize: 12, color: SLATE, fontStyle: 'italic', marginBottom: 8 }}>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8 }}>
                           {p.next_action}
                         </div>
                       )}
@@ -784,13 +739,13 @@ export default function GrowthPage() {
             <SectionTitle>New to Contact</SectionTitle>
             {newProspects.length === 0 ? (
               <Card style={{ padding: 40, textAlign: 'center' }}>
-                <span style={{ color: SLATE, fontSize: 13 }}>No new prospects waiting</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>No new prospects waiting</span>
               </Card>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {newProspects.slice(0, showMoreNewCount).map((p) => {
                   const score = p.bl_score
-                  const scoreBg = score !== null && score >= 8 ? GREEN : score !== null && score >= 6 ? AMBER : SLATE
+                  const scoreBg = score !== null && score >= 8 ? GREEN : score !== null && score >= 6 ? AMBER : 'var(--text-muted)'
 
                   return (
                     <Card key={p.id}>
@@ -814,16 +769,16 @@ export default function GrowthPage() {
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                        {p.trigger_type && <Tag label={p.trigger_type} color={TEAL} />}
+                        {p.trigger_type && <Tag label={p.trigger_type} color={'var(--accent)'} />}
                         {p.industry && (
-                          <span style={{ fontSize: 11, color: SLATE }}>{p.industry}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.industry}</span>
                         )}
                       </div>
                       {p.bl_reason && (
                         <div
                           style={{
                             fontSize: 11,
-                            color: SLATE,
+                            color: 'var(--text-muted)',
                             fontStyle: 'italic',
                             marginBottom: 4,
                             overflow: 'hidden',
@@ -835,7 +790,7 @@ export default function GrowthPage() {
                         </div>
                       )}
                       {p.postcode && (
-                        <div style={{ fontSize: 11, color: SLATE, marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
                           {p.postcode}
                         </div>
                       )}
@@ -851,7 +806,7 @@ export default function GrowthPage() {
                             const threeDays = new Date()
                             threeDays.setDate(threeDays.getDate() + 3)
                             updateProspect(p.id, {
-                              status: 'Contacted',
+                              status: 'Connection Sent',
                               contact_name: name || null,
                               follow_up_date: threeDays.toISOString().split('T')[0],
                               updated_at: new Date().toISOString(),
@@ -919,7 +874,7 @@ export default function GrowthPage() {
                   <div
                     key={field}
                     style={{
-                      background: NAVY_CARD,
+                      background: 'var(--bg-card)',
                       borderRadius: 10,
                       padding: '14px 16px',
                       display: 'flex',
@@ -931,7 +886,7 @@ export default function GrowthPage() {
                       <div style={{ fontSize: 24, fontWeight: 700 }}>
                         {currentWeekStats ? currentWeekStats[field] : 0}
                       </div>
-                      <div style={{ fontSize: 11, color: SLATE, textTransform: 'uppercase' as const }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' as const }}>
                         {label}
                       </div>
                     </div>
@@ -943,10 +898,10 @@ export default function GrowthPage() {
               </div>
 
               {/* Conversion rates */}
-              <div style={{ display: 'flex', gap: 16, fontSize: 12, color: SLATE }}>
+              <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-muted)' }}>
                 <span>
                   Accept rate:{' '}
-                  <strong style={{ color: LIGHT }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>
                     {currentWeekStats && currentWeekStats.sent > 0
                       ? ((currentWeekStats.accepted / currentWeekStats.sent) * 100).toFixed(0) + '%'
                       : '-'}
@@ -954,7 +909,7 @@ export default function GrowthPage() {
                 </span>
                 <span>
                   Reply rate:{' '}
-                  <strong style={{ color: LIGHT }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>
                     {currentWeekStats && currentWeekStats.accepted > 0
                       ? ((currentWeekStats.replied / currentWeekStats.accepted) * 100).toFixed(0) +
                         '%'
@@ -969,7 +924,7 @@ export default function GrowthPage() {
               <Card>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ color: SLATE, textAlign: 'left' }}>
+                    <tr style={{ color: 'var(--text-muted)', textAlign: 'left' }}>
                       <th style={{ padding: '4px 8px', fontWeight: 500 }}>Week</th>
                       <th style={{ padding: '4px 8px', fontWeight: 500 }}>Sent</th>
                       <th style={{ padding: '4px 8px', fontWeight: 500 }}>Acc</th>
@@ -979,7 +934,7 @@ export default function GrowthPage() {
                   </thead>
                   <tbody>
                     {pastWeeks.map((w) => (
-                      <tr key={w.id} style={{ borderTop: `1px solid ${BORDER}` }}>
+                      <tr key={w.id} style={{ borderTop: '1px solid var(--border)' }}>
                         <td style={{ padding: '6px 8px' }}>{formatDate(w.week_starting)}</td>
                         <td style={{ padding: '6px 8px' }}>{w.sent}</td>
                         <td style={{ padding: '6px 8px' }}>{w.accepted}</td>
@@ -1009,7 +964,7 @@ export default function GrowthPage() {
         >
           {/* Stage filters */}
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {['All', ...STAGE_ORDER, 'Dead', 'Passed'].map((s) => (
+            {['All', ...PROSPECT_STAGES].map((s) => (
               <button
                 key={s}
                 onClick={() => setStageFilter(s)}
@@ -1025,9 +980,9 @@ export default function GrowthPage() {
                   fontFamily: 'inherit',
                   background:
                     stageFilter === s
-                      ? (STAGE_COLORS[s] || TEAL)
-                      : (STAGE_COLORS[s] || TEAL) + '22',
-                  color: stageFilter === s ? NAVY : (STAGE_COLORS[s] || TEAL),
+                      ? (STAGE_COLORS[s as ProspectStage] || 'var(--accent)')
+                      : (STAGE_COLORS[s as ProspectStage] || 'var(--accent)') + '22',
+                  color: stageFilter === s ? 'var(--bg-primary)' : (STAGE_COLORS[s as ProspectStage] || 'var(--accent)'),
                 }}
               >
                 {s}
@@ -1052,7 +1007,7 @@ export default function GrowthPage() {
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   background: sourceFilter === s ? PURPLE : PURPLE + '22',
-                  color: sourceFilter === s ? NAVY : PURPLE,
+                  color: sourceFilter === s ? 'var(--bg-primary)' : PURPLE,
                 }}
               >
                 {s}
@@ -1066,8 +1021,8 @@ export default function GrowthPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              background: NAVY_CARD,
-              border: `1px solid ${BORDER}`,
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
               borderRadius: 8,
               padding: '6px 10px',
               flex: 1,
@@ -1075,7 +1030,7 @@ export default function GrowthPage() {
               maxWidth: 300,
             }}
           >
-            <Search size={14} color={SLATE} />
+            <Search size={14} color={'var(--text-muted)'} />
             <input
               type="text"
               value={searchQuery}
@@ -1084,7 +1039,7 @@ export default function GrowthPage() {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: LIGHT,
+                color: 'var(--text-primary)',
                 fontSize: 13,
                 outline: 'none',
                 width: '100%',
@@ -1152,7 +1107,7 @@ export default function GrowthPage() {
               <Select
                 value={addStage}
                 onChange={setAddStage}
-                options={[...STAGE_ORDER, 'Dead', 'Passed'].map((s) => ({
+                options={PROSPECT_STAGES.map((s) => ({
                   value: s,
                   label: s,
                 }))}
@@ -1187,18 +1142,18 @@ export default function GrowthPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredProspects.length === 0 && (
             <Card style={{ textAlign: 'center', padding: 40 }}>
-              <span style={{ color: SLATE }}>No prospects match your filters</span>
+              <span style={{ color: 'var(--text-muted)' }}>No prospects match your filters</span>
             </Card>
           )}
           {filteredProspects.map((p) => {
-            const stageColor = STAGE_COLORS[p.status] || SLATE
+            const stageColor = STAGE_COLORS[p.status as ProspectStage] || 'var(--text-muted)'
             const isOverdue = p.follow_up_date && p.follow_up_date < today
             const isUpcoming =
               p.follow_up_date &&
               !isOverdue &&
               new Date(p.follow_up_date).getTime() - new Date(today).getTime() <= 3 * 86400000
-            const currentIdx = (STAGE_ORDER as readonly string[]).indexOf(p.status)
-            const canAdvance = currentIdx >= 0 && currentIdx < STAGE_ORDER.length - 1
+            const nextStage = NEXT_STAGE[p.status as ProspectStage]
+            const canAdvance = !!nextStage
 
             if (editingId === p.id) {
               return (
@@ -1234,7 +1189,7 @@ export default function GrowthPage() {
                     <Select
                       value={editForm.status || ''}
                       onChange={(v) => setEditForm((f) => ({ ...f, status: v }))}
-                      options={[...STAGE_ORDER, 'Dead', 'Passed'].map((s) => ({
+                      options={PROSPECT_STAGES.map((s) => ({
                         value: s,
                         label: s,
                       }))}
@@ -1291,7 +1246,7 @@ export default function GrowthPage() {
                     {p.contact_name &&
                       p.company_name &&
                       p.contact_name !== p.company_name && (
-                        <div style={{ fontSize: 12, color: SLATE, marginBottom: 6 }}>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>
                           {p.company_name}
                         </div>
                       )}
@@ -1314,8 +1269,8 @@ export default function GrowthPage() {
                             padding: '2px 7px',
                             borderRadius: 99,
                             background:
-                              (p.bl_score >= 8 ? GREEN : p.bl_score >= 6 ? AMBER : SLATE) + '22',
-                            color: p.bl_score >= 8 ? GREEN : p.bl_score >= 6 ? AMBER : SLATE,
+                              (p.bl_score >= 8 ? GREEN : p.bl_score >= 6 ? AMBER : 'var(--text-muted)') + '22',
+                            color: p.bl_score >= 8 ? GREEN : p.bl_score >= 6 ? AMBER : 'var(--text-muted)',
                           }}
                         >
                           {p.bl_score}
@@ -1334,7 +1289,7 @@ export default function GrowthPage() {
                       {p.follow_up_date && (
                         <span
                           style={{
-                            color: isOverdue ? RED : isUpcoming ? AMBER : SLATE,
+                            color: isOverdue ? RED : isUpcoming ? AMBER : 'var(--text-muted)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: 4,
@@ -1345,7 +1300,7 @@ export default function GrowthPage() {
                         </span>
                       )}
                       {p.next_action && (
-                        <span style={{ color: SLATE }}>{p.next_action}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{p.next_action}</span>
                       )}
                     </div>
                   </div>
@@ -1362,8 +1317,8 @@ export default function GrowthPage() {
                       value={p.status}
                       onChange={(e) => updateProspect(p.id, { status: e.target.value })}
                       style={{
-                        background: NAVY_CARD,
-                        border: `1px solid ${BORDER}`,
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
                         borderRadius: 6,
                         color: stageColor,
                         padding: '4px 8px',
@@ -1373,7 +1328,7 @@ export default function GrowthPage() {
                         outline: 'none',
                       }}
                     >
-                      {[...STAGE_ORDER, 'Dead', 'Passed'].map((s) => (
+                      {PROSPECT_STAGES.map((s) => (
                         <option key={s} value={s}>
                           {s}
                         </option>
@@ -1386,7 +1341,7 @@ export default function GrowthPage() {
                         small
                         onClick={() =>
                           updateProspect(p.id, {
-                            status: STAGE_ORDER[currentIdx + 1],
+                            status: nextStage,
                           })
                         }
                       >
@@ -1436,7 +1391,7 @@ export default function GrowthPage() {
             <SectionTitle>Acquisition Channels</SectionTitle>
             <ChevronDown
               size={16}
-              color={SLATE}
+              color={'var(--text-muted)'}
               style={{
                 transform: channelsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.2s',
@@ -1455,12 +1410,12 @@ export default function GrowthPage() {
             >
               {campaigns.length === 0 ? (
                 <Card style={{ textAlign: 'center', padding: 32 }}>
-                  <span style={{ color: SLATE }}>No campaigns yet</span>
+                  <span style={{ color: 'var(--text-muted)' }}>No campaigns yet</span>
                 </Card>
               ) : (
                 campaigns.map((c) => {
                   const statusColor =
-                    c.status === 'active' ? GREEN : c.status === 'paused' ? AMBER : SLATE
+                    c.status === 'active' ? GREEN : c.status === 'paused' ? AMBER : 'var(--text-muted)'
                   return (
                     <Card key={c.id}>
                       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>
@@ -1471,7 +1426,7 @@ export default function GrowthPage() {
                         <Tag label={c.status} color={statusColor} />
                       </div>
                       {c.description && (
-                        <div style={{ fontSize: 12, color: SLATE }}>{c.description}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.description}</div>
                       )}
                     </Card>
                   )
