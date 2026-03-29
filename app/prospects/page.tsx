@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
+import { PROSPECT_STAGES, STAGE_COLORS, type ProspectStage } from '@/lib/tokens';
 import {
-  ArrowLeft,
   Building2,
   ExternalLink,
   Linkedin,
@@ -20,28 +19,10 @@ import {
   ArrowRightCircle,
 } from 'lucide-react';
 
-const NAVY = '#0F1B35';
-const NAVY_MID = '#162240';
-const NAVY_CARD = '#1E2F52';
-const TEAL = '#53E9C5';
-const SLATE = '#5C6478';
-const LIGHT = '#E8EDF5';
-const BORDER = 'rgba(83,233,197,0.15)';
 const AMBER = '#F59E0B';
 const GREEN = '#34D399';
 const RED = '#F87171';
 const PURPLE = '#7C8CF8';
-
-const STATUS_OPTIONS = [
-  'New',
-  'Sent',
-  'Accepted',
-  'Replied',
-  'Call Booked',
-  'Proposal',
-  'Signed',
-  'Dead',
-];
 
 interface Prospect {
   id: string;
@@ -88,18 +69,18 @@ function formatDate(dateStr: string | null): string {
 }
 
 function getScoreBadgeColor(score: number | null): string {
-  if (score === null) return SLATE;
+  if (score === null) return 'var(--text-muted)';
   if (score >= 8) return GREEN;
   if (score >= 6) return AMBER;
-  return SLATE;
+  return 'var(--text-muted)';
 }
 
 function getPriorityColor(priority: string | null): string {
-  if (!priority) return SLATE;
+  if (!priority) return 'var(--text-muted)';
   const p = priority.toLowerCase();
   if (p === 'high') return RED;
   if (p === 'medium') return AMBER;
-  return SLATE;
+  return 'var(--text-muted)';
 }
 
 export default function ProspectsPage() {
@@ -318,7 +299,7 @@ export default function ProspectsPage() {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: NAVY,
+          backgroundColor: 'var(--bg-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -327,12 +308,11 @@ export default function ProspectsPage() {
         <div style={{ textAlign: 'center' }}>
           <Loader2
             size={40}
-            style={{ color: TEAL, animation: 'spin 1s linear infinite' }}
+            style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }}
           />
-          <p style={{ color: LIGHT, marginTop: 16, fontSize: 16 }}>
+          <p style={{ color: 'var(--text-primary)', marginTop: 16, fontSize: 16, fontFamily: 'inherit' }}>
             Loading prospects...
           </p>
-          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
@@ -343,7 +323,7 @@ export default function ProspectsPage() {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: NAVY,
+          backgroundColor: 'var(--bg-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -351,7 +331,7 @@ export default function ProspectsPage() {
       >
         <div
           style={{
-            backgroundColor: NAVY_CARD,
+            backgroundColor: 'var(--bg-card)',
             border: `1px solid ${RED}`,
             borderRadius: 12,
             padding: 32,
@@ -360,23 +340,24 @@ export default function ProspectsPage() {
           }}
         >
           <AlertCircle size={40} style={{ color: RED, marginBottom: 16 }} />
-          <h2 style={{ color: LIGHT, fontSize: 20, margin: '0 0 8px' }}>
+          <h2 style={{ color: 'var(--text-primary)', fontSize: 20, margin: '0 0 8px', fontFamily: 'inherit' }}>
             Error Loading Prospects
           </h2>
-          <p style={{ color: SLATE, fontSize: 14, margin: '0 0 20px' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 0 20px', fontFamily: 'inherit' }}>
             {error}
           </p>
           <button
             onClick={fetchProspects}
             style={{
-              backgroundColor: TEAL,
-              color: NAVY,
+              backgroundColor: 'var(--accent)',
+              color: 'var(--bg-primary)',
               border: 'none',
               borderRadius: 8,
               padding: '10px 24px',
               fontWeight: 600,
               fontSize: 14,
               cursor: 'pointer',
+              fontFamily: 'inherit',
             }}
           >
             Retry
@@ -387,67 +368,13 @@ export default function ProspectsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: NAVY }}>
-      {/* Header */}
-      <header
-        style={{
-          backgroundColor: NAVY_MID,
-          borderBottom: `1px solid ${BORDER}`,
-          padding: '20px 32px',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1280,
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-          }}
-        >
-          <Link
-            href="/"
-            style={{
-              color: TEAL,
-              display: 'flex',
-              alignItems: 'center',
-              textDecoration: 'none',
-            }}
-          >
-            <ArrowLeft size={24} />
-          </Link>
-          <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 24,
-                fontWeight: 700,
-                color: LIGHT,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Beacon &amp; Ledger
-            </h1>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 14,
-                color: TEAL,
-                fontWeight: 500,
-              }}
-            >
-              Prospects
-            </p>
-          </div>
-        </div>
-      </header>
-
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 32px' }}>
         {prospects.length === 0 ? (
           <div
             style={{
-              backgroundColor: NAVY_CARD,
-              border: `1px solid ${BORDER}`,
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border)',
               borderRadius: 12,
               padding: 48,
               textAlign: 'center',
@@ -456,12 +383,12 @@ export default function ProspectsPage() {
           >
             <Building2
               size={48}
-              style={{ color: SLATE, marginBottom: 16 }}
+              style={{ color: 'var(--text-muted)', marginBottom: 16 }}
             />
-            <h2 style={{ color: LIGHT, fontSize: 20, margin: '0 0 8px' }}>
+            <h2 style={{ color: 'var(--text-primary)', fontSize: 20, margin: '0 0 8px', fontFamily: 'inherit' }}>
               No auto-discovered prospects yet
             </h2>
-            <p style={{ color: SLATE, fontSize: 14, margin: 0 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0, fontFamily: 'inherit' }}>
               The CompanyQuery pipeline will populate this page.
             </p>
           </div>
@@ -503,7 +430,7 @@ export default function ProspectsPage() {
               <div
                 style={{
                   width: 1,
-                  backgroundColor: BORDER,
+                  backgroundColor: 'var(--border)',
                   margin: '0 4px',
                 }}
               />
@@ -530,7 +457,7 @@ export default function ProspectsPage() {
               }}
             >
               <StatCard
-                icon={<Users size={20} style={{ color: TEAL }} />}
+                icon={<Users size={20} style={{ color: 'var(--accent)' }} />}
                 label="Total Prospects"
                 value={String(stats.total)}
               />
@@ -555,8 +482,8 @@ export default function ProspectsPage() {
             {triggerBreakdown.length > 0 && (
               <div
                 style={{
-                  backgroundColor: NAVY_CARD,
-                  border: `1px solid ${BORDER}`,
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
                   borderRadius: 12,
                   padding: 20,
                   marginBottom: 24,
@@ -567,13 +494,14 @@ export default function ProspectsPage() {
                     margin: '0 0 16px',
                     fontSize: 16,
                     fontWeight: 600,
-                    color: LIGHT,
+                    color: 'var(--text-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
+                    fontFamily: 'inherit',
                   }}
                 >
-                  <BarChart3 size={18} style={{ color: TEAL }} />
+                  <BarChart3 size={18} style={{ color: 'var(--accent)' }} />
                   Trigger Type Breakdown
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -581,10 +509,11 @@ export default function ProspectsPage() {
                     <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span
                         style={{
-                          color: LIGHT,
+                          color: 'var(--text-primary)',
                           fontSize: 13,
                           minWidth: 160,
                           textTransform: 'capitalize',
+                          fontFamily: 'inherit',
                         }}
                       >
                         {type.replace(/_/g, ' ')}
@@ -593,7 +522,7 @@ export default function ProspectsPage() {
                         style={{
                           flex: 1,
                           height: 24,
-                          backgroundColor: NAVY_MID,
+                          backgroundColor: 'var(--bg-mid)',
                           borderRadius: 6,
                           overflow: 'hidden',
                           position: 'relative',
@@ -603,7 +532,7 @@ export default function ProspectsPage() {
                           style={{
                             width: `${(count / maxTriggerCount) * 100}%`,
                             height: '100%',
-                            backgroundColor: TEAL,
+                            backgroundColor: 'var(--accent)',
                             borderRadius: 6,
                             opacity: 0.7,
                             transition: 'width 0.3s ease',
@@ -612,11 +541,12 @@ export default function ProspectsPage() {
                       </div>
                       <span
                         style={{
-                          color: TEAL,
+                          color: 'var(--accent)',
                           fontWeight: 600,
                           fontSize: 14,
                           minWidth: 30,
                           textAlign: 'right',
+                          fontFamily: 'inherit',
                         }}
                       >
                         {count}
@@ -632,14 +562,14 @@ export default function ProspectsPage() {
               {filteredProspects.length === 0 ? (
                 <div
                   style={{
-                    backgroundColor: NAVY_CARD,
-                    border: `1px solid ${BORDER}`,
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
                     borderRadius: 12,
                     padding: 32,
                     textAlign: 'center',
                   }}
                 >
-                  <p style={{ color: SLATE, fontSize: 14, margin: 0 }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0, fontFamily: 'inherit' }}>
                     No prospects match the current filters.
                   </p>
                 </div>
@@ -657,8 +587,8 @@ export default function ProspectsPage() {
                     <div
                       key={prospect.id}
                       style={{
-                        backgroundColor: NAVY_CARD,
-                        border: `1px solid ${BORDER}`,
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
                         borderRadius: 12,
                         padding: 20,
                       }}
@@ -688,7 +618,8 @@ export default function ProspectsPage() {
                                 margin: 0,
                                 fontSize: 18,
                                 fontWeight: 700,
-                                color: LIGHT,
+                                color: 'var(--text-primary)',
+                                fontFamily: 'inherit',
                               }}
                             >
                               {prospect.company_name}
@@ -697,7 +628,7 @@ export default function ProspectsPage() {
                               <span
                                 style={{
                                   fontSize: 12,
-                                  color: SLATE,
+                                  color: 'var(--text-muted)',
                                   fontFamily: 'monospace',
                                 }}
                               >
@@ -710,7 +641,8 @@ export default function ProspectsPage() {
                               style={{
                                 margin: '4px 0 0',
                                 fontSize: 13,
-                                color: SLATE,
+                                color: 'var(--text-muted)',
+                                fontFamily: 'inherit',
                               }}
                             >
                               {prospect.industry}
@@ -731,11 +663,12 @@ export default function ProspectsPage() {
                             <span
                               style={{
                                 backgroundColor: getScoreBadgeColor(prospect.bl_score),
-                                color: NAVY,
+                                color: 'var(--bg-primary)',
                                 fontWeight: 700,
                                 fontSize: 13,
                                 padding: '3px 10px',
                                 borderRadius: 6,
+                                fontFamily: 'inherit',
                               }}
                             >
                               Score: {prospect.bl_score}
@@ -745,12 +678,13 @@ export default function ProspectsPage() {
                             <span
                               style={{
                                 backgroundColor: getPriorityColor(prospect.bl_priority),
-                                color: NAVY,
+                                color: 'var(--bg-primary)',
                                 fontWeight: 600,
                                 fontSize: 12,
                                 padding: '3px 10px',
                                 borderRadius: 6,
                                 textTransform: 'capitalize',
+                                fontFamily: 'inherit',
                               }}
                             >
                               {prospect.bl_priority}
@@ -759,13 +693,14 @@ export default function ProspectsPage() {
                           {prospect.trigger_type && (
                             <span
                               style={{
-                                border: `1px solid ${TEAL}`,
-                                color: TEAL,
+                                border: '1px solid var(--accent)',
+                                color: 'var(--accent)',
                                 fontSize: 12,
                                 fontWeight: 500,
                                 padding: '3px 10px',
                                 borderRadius: 6,
                                 textTransform: 'capitalize',
+                                fontFamily: 'inherit',
                               }}
                             >
                               {prospect.trigger_type.replace(/_/g, ' ')}
@@ -781,8 +716,9 @@ export default function ProspectsPage() {
                           flexWrap: 'wrap',
                           gap: 16,
                           fontSize: 13,
-                          color: SLATE,
+                          color: 'var(--text-muted)',
                           marginBottom: 12,
+                          fontFamily: 'inherit',
                         }}
                       >
                         {prospect.incorporation_date && (
@@ -807,13 +743,14 @@ export default function ProspectsPage() {
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: TEAL,
+                              color: 'var(--accent)',
                               fontSize: 13,
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               gap: 4,
                               padding: 0,
+                              fontFamily: 'inherit',
                             }}
                           >
                             {isExpanded ? (
@@ -828,12 +765,13 @@ export default function ProspectsPage() {
                               style={{
                                 margin: '8px 0 0',
                                 fontSize: 13,
-                                color: LIGHT,
+                                color: 'var(--text-primary)',
                                 lineHeight: 1.5,
-                                backgroundColor: NAVY_MID,
+                                backgroundColor: 'var(--bg-mid)',
                                 borderRadius: 8,
                                 padding: 12,
-                                border: `1px solid ${BORDER}`,
+                                border: '1px solid var(--border)',
+                                fontFamily: 'inherit',
                               }}
                             >
                               {reasonText}
@@ -855,29 +793,31 @@ export default function ProspectsPage() {
                         <label
                           style={{
                             fontSize: 12,
-                            color: SLATE,
+                            color: 'var(--text-muted)',
                             fontWeight: 500,
+                            fontFamily: 'inherit',
                           }}
                         >
                           Status:
                         </label>
                         <select
-                          value={prospect.status || 'New'}
+                          value={prospect.status || 'Identified'}
                           onChange={(e) =>
                             handleStatusChange(prospect.id, e.target.value)
                           }
                           style={{
-                            backgroundColor: NAVY_MID,
-                            color: LIGHT,
-                            border: `1px solid ${BORDER}`,
+                            backgroundColor: 'var(--bg-mid)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border)',
                             borderRadius: 6,
                             padding: '6px 10px',
                             fontSize: 13,
                             cursor: 'pointer',
                             outline: 'none',
+                            fontFamily: 'inherit',
                           }}
                         >
-                          {STATUS_OPTIONS.map((s) => (
+                          {PROSPECT_STAGES.map((s) => (
                             <option key={s} value={s}>
                               {s}
                             </option>
@@ -887,9 +827,10 @@ export default function ProspectsPage() {
                         <label
                           style={{
                             fontSize: 12,
-                            color: SLATE,
+                            color: 'var(--text-muted)',
                             fontWeight: 500,
                             marginLeft: 8,
+                            fontFamily: 'inherit',
                           }}
                         >
                           Next Action:
@@ -914,15 +855,16 @@ export default function ProspectsPage() {
                           onBlur={() => handleNextActionBlur(prospect.id)}
                           placeholder="e.g. Send intro email..."
                           style={{
-                            backgroundColor: NAVY_MID,
-                            color: LIGHT,
-                            border: `1px solid ${BORDER}`,
+                            backgroundColor: 'var(--bg-mid)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border)',
                             borderRadius: 6,
                             padding: '6px 10px',
                             fontSize: 13,
                             flex: 1,
                             minWidth: 160,
                             outline: 'none',
+                            fontFamily: 'inherit',
                           }}
                         />
                       </div>
@@ -946,14 +888,15 @@ export default function ProspectsPage() {
                             alignItems: 'center',
                             gap: 6,
                             backgroundColor: 'transparent',
-                            color: TEAL,
-                            border: `1px solid ${TEAL}`,
+                            color: 'var(--accent)',
+                            border: '1px solid var(--accent)',
                             borderRadius: 6,
                             padding: '6px 14px',
                             fontSize: 13,
                             fontWeight: 500,
                             textDecoration: 'none',
                             cursor: 'pointer',
+                            fontFamily: 'inherit',
                           }}
                         >
                           <Linkedin size={14} />
@@ -978,6 +921,7 @@ export default function ProspectsPage() {
                               fontWeight: 500,
                               textDecoration: 'none',
                               cursor: 'pointer',
+                              fontFamily: 'inherit',
                             }}
                           >
                             <ExternalLink size={14} />
@@ -995,7 +939,7 @@ export default function ProspectsPage() {
                                 alignItems: 'center',
                                 gap: 6,
                                 backgroundColor: GREEN,
-                                color: NAVY,
+                                color: 'var(--bg-primary)',
                                 border: 'none',
                                 borderRadius: 6,
                                 padding: '6px 14px',
@@ -1003,6 +947,7 @@ export default function ProspectsPage() {
                                 fontWeight: 600,
                                 cursor: isConverting ? 'not-allowed' : 'pointer',
                                 opacity: isConverting ? 0.6 : 1,
+                                fontFamily: 'inherit',
                               }}
                             >
                               {isConverting ? (
@@ -1029,6 +974,7 @@ export default function ProspectsPage() {
                               fontSize: 13,
                               fontWeight: 500,
                               padding: '6px 14px',
+                              fontFamily: 'inherit',
                             }}
                           >
                             <ArrowRightCircle size={14} />
@@ -1052,6 +998,7 @@ export default function ProspectsPage() {
                               fontWeight: 500,
                               cursor: 'pointer',
                               marginLeft: 'auto',
+                              fontFamily: 'inherit',
                             }}
                           >
                             <XCircle size={14} />
@@ -1067,8 +1014,6 @@ export default function ProspectsPage() {
           </>
         )}
       </main>
-
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -1086,9 +1031,9 @@ function FilterButton({
     <button
       onClick={onClick}
       style={{
-        backgroundColor: active ? TEAL : 'transparent',
-        color: active ? NAVY : LIGHT,
-        border: `1px solid ${active ? TEAL : BORDER}`,
+        backgroundColor: active ? 'var(--accent)' : 'transparent',
+        color: active ? 'var(--bg-primary)' : 'var(--text-primary)',
+        border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
         borderRadius: 6,
         padding: '6px 14px',
         fontSize: 13,
@@ -1096,6 +1041,7 @@ function FilterButton({
         cursor: 'pointer',
         textTransform: 'capitalize',
         transition: 'all 0.15s ease',
+        fontFamily: 'inherit',
       }}
     >
       {label}
@@ -1115,8 +1061,8 @@ function StatCard({
   return (
     <div
       style={{
-        backgroundColor: NAVY_CARD,
-        border: `1px solid ${BORDER}`,
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border)',
         borderRadius: 12,
         padding: 16,
         display: 'flex',
@@ -1126,7 +1072,7 @@ function StatCard({
     >
       <div
         style={{
-          backgroundColor: NAVY_MID,
+          backgroundColor: 'var(--bg-mid)',
           borderRadius: 8,
           padding: 10,
           display: 'flex',
@@ -1137,7 +1083,7 @@ function StatCard({
         {icon}
       </div>
       <div>
-        <p style={{ margin: 0, fontSize: 12, color: SLATE, fontWeight: 500 }}>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', fontWeight: 500, fontFamily: 'inherit' }}>
           {label}
         </p>
         <p
@@ -1145,7 +1091,8 @@ function StatCard({
             margin: '2px 0 0',
             fontSize: 22,
             fontWeight: 700,
-            color: LIGHT,
+            color: 'var(--text-primary)',
+            fontFamily: 'inherit',
           }}
         >
           {value}
