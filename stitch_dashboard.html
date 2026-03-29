@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Beacon &amp; Ledger | Growth Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline": "#75777e",
+              "tertiary-fixed-dim": "#bec6dd",
+              "on-secondary-fixed": "#002019",
+              "on-tertiary-fixed": "#131b2c",
+              "surface-dim": "#d9dadb",
+              "on-surface": "#191c1d",
+              "inverse-surface": "#2e3132",
+              "primary-container": "#15213c",
+              "surface-container-high": "#e7e8e9",
+              "surface-container-low": "#f3f4f5",
+              "surface": "#f8f9fa",
+              "secondary-container": "#67fad5",
+              "surface-container-lowest": "#ffffff",
+              "inverse-primary": "#bac6e9",
+              "on-primary-fixed": "#0e1b35",
+              "on-primary-container": "#7d89a9",
+              "on-secondary-container": "#00725d",
+              "on-tertiary-fixed-variant": "#3f4759",
+              "on-surface-variant": "#45464d",
+              "primary-fixed": "#d9e2ff",
+              "surface-bright": "#f8f9fa",
+              "surface-tint": "#525e7c",
+              "error": "#ba1a1a",
+              "secondary-fixed": "#67fad5",
+              "tertiary": "#040b1c",
+              "secondary": "#006b57",
+              "outline-variant": "#c6c6ce",
+              "background": "#f8f9fa",
+              "tertiary-fixed": "#dae2fa",
+              "on-secondary": "#ffffff",
+              "on-error-container": "#93000a",
+              "on-primary-fixed-variant": "#3b4663",
+              "inverse-on-surface": "#f0f1f2",
+              "primary": "#000a24",
+              "surface-container": "#edeeef",
+              "on-primary": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-container": "#81899e",
+              "error-container": "#ffdad6",
+              "on-secondary-fixed-variant": "#005141",
+              "on-background": "#191c1d",
+              "surface-variant": "#e1e3e4",
+              "tertiary-container": "#1a2233",
+              "primary-fixed-dim": "#bac6e9",
+              "on-error": "#ffffff",
+              "secondary-fixed-dim": "#44ddba",
+              "surface-container-highest": "#e1e3e4"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8f9fa;
+        color: #191c1d;
+      }
+      h1, h2, h3 {
+        font-family: 'Manrope', sans-serif;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e1e3e4;
+        border-radius: 10px;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopAppBar -->
+<header class="bg-white/80 dark:bg-[#000A24]/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-[0_12px_40px_rgba(21,33,60,0.06)]">
+<div class="flex items-center justify-between px-8 py-6 max-w-[1440px] mx-auto w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#15213C] dark:text-[#67FAD5] cursor-pointer" data-icon="menu_open">menu_open</span>
+<div class="flex flex-col">
+<span class="text-[#15213C] dark:text-white font-extrabold tracking-tighter font-['Manrope'] text-2xl leading-tight">Beacon &amp; Ledger</span>
+<span class="text-[11px] font-['Inter'] font-semibold uppercase tracking-wider text-[#5C6478]">Growth dashboard</span>
+</div>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<nav class="flex gap-6">
+<a class="text-[#006B57] dark:text-[#67FAD5] font-semibold text-sm transition-colors duration-300" href="#">Dashboard</a>
+<a class="text-[#5C6478] dark:text-slate-400 hover:text-[#15213C] transition-colors duration-300 text-sm" href="#">Ledger</a>
+<a class="text-[#5C6478] dark:text-slate-400 hover:text-[#15213C] transition-colors duration-300 text-sm" href="#">Advisory</a>
+</nav>
+<button class="bg-secondary-container text-on-secondary-container px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-sm">
+                    Content Intelligence
+                </button>
+</div>
+</div>
+<div class="bg-[#F3F4F5] dark:bg-[#15213C]/20 h-[1px] w-full"></div>
+</header>
+<main class="max-w-[1440px] mx-auto px-8 py-10 pb-32">
+<!-- KPI Bar -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_rgba(21,33,60,0.06)] group hover:-translate-y-1 transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="payments">payments</span>
+<span class="text-[10px] font-bold text-secondary bg-secondary-container/30 px-2 py-0.5 rounded-full">+12%</span>
+</div>
+<h3 class="text-[#5C6478] text-xs font-semibold uppercase tracking-wider mb-1">MRR (signed)</h3>
+<p class="text-2xl font-extrabold text-[#15213C]">£42,850</p>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_rgba(21,33,60,0.06)] group hover:-translate-y-1 transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="group">group</span>
+<span class="text-[10px] font-bold text-secondary bg-secondary-container/30 px-2 py-0.5 rounded-full">Active</span>
+</div>
+<h3 class="text-[#5C6478] text-xs font-semibold uppercase tracking-wider mb-1">Active leads</h3>
+<p class="text-2xl font-extrabold text-[#15213C]">18</p>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_rgba(21,33,60,0.06)] group hover:-translate-y-1 transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="task_alt">task_alt</span>
+<span class="text-[10px] font-bold text-[#5C6478] bg-surface-container-low px-2 py-0.5 rounded-full">85%</span>
+</div>
+<h3 class="text-[#5C6478] text-xs font-semibold uppercase tracking-wider mb-1">Milestones done</h3>
+<p class="text-2xl font-extrabold text-[#15213C]">24/28</p>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_rgba(21,33,60,0.06)] group hover:-translate-y-1 transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="article">article</span>
+<span class="text-[10px] font-bold text-secondary bg-secondary-container/30 px-2 py-0.5 rounded-full">New</span>
+</div>
+<h3 class="text-[#5C6478] text-xs font-semibold uppercase tracking-wider mb-1">Posts published</h3>
+<p class="text-2xl font-extrabold text-[#15213C]">12</p>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+<!-- Sales Pipeline -->
+<section class="lg:col-span-2 space-y-6">
+<div class="flex justify-between items-end">
+<h2 class="text-2xl font-bold text-[#15213C] tracking-tight">Sales Pipeline</h2>
+<span class="text-sm font-medium text-secondary cursor-pointer hover:underline">View CRM →</span>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+<!-- Column 1 -->
+<div class="flex-shrink-0 w-64">
+<div class="bg-surface-container-low p-3 rounded-t-lg mb-3 flex justify-between items-center">
+<span class="text-[11px] font-bold uppercase tracking-widest text-[#5C6478]">Outreach</span>
+<span class="bg-white/50 text-[10px] px-2 py-0.5 rounded text-[#15213C]">4</span>
+</div>
+<div class="space-y-3">
+<div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-secondary/20">
+<p class="text-xs font-bold text-[#15213C] mb-1">Modern Ledger Ltd</p>
+<div class="flex justify-between items-center">
+<span class="text-[10px] text-[#5C6478]">£2,500/mo</span>
+<span class="text-[9px] bg-primary-container text-white px-1.5 py-0.5 rounded uppercase font-bold">SME</span>
+</div>
+</div>
+<div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-secondary/20">
+<p class="text-xs font-bold text-[#15213C] mb-1">Finlay &amp; Co</p>
+<div class="flex justify-between items-center">
+<span class="text-[10px] text-[#5C6478]">£1,800/mo</span>
+<span class="text-[9px] bg-secondary-container text-on-secondary-container px-1.5 py-0.5 rounded uppercase font-bold">Accountant</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 2 -->
+<div class="flex-shrink-0 w-64">
+<div class="bg-surface-container-low p-3 rounded-t-lg mb-3 flex justify-between items-center">
+<span class="text-[11px] font-bold uppercase tracking-widest text-[#5C6478]">Discovery</span>
+<span class="bg-white/50 text-[10px] px-2 py-0.5 rounded text-[#15213C]">2</span>
+</div>
+<div class="space-y-3">
+<div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-secondary/40">
+<p class="text-xs font-bold text-[#15213C] mb-1">Global Audit Partners</p>
+<div class="flex justify-between items-center">
+<span class="text-[10px] text-[#5C6478]">£5,000/mo</span>
+<span class="text-[9px] bg-secondary-container text-on-secondary-container px-1.5 py-0.5 rounded uppercase font-bold">Accountant</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3 -->
+<div class="flex-shrink-0 w-64">
+<div class="bg-surface-container-low p-3 rounded-t-lg mb-3 flex justify-between items-center">
+<span class="text-[11px] font-bold uppercase tracking-widest text-[#5C6478]">Proposal</span>
+<span class="bg-white/50 text-[10px] px-2 py-0.5 rounded text-[#15213C]">1</span>
+</div>
+<div class="space-y-3">
+<div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-secondary/60">
+<p class="text-xs font-bold text-[#15213C] mb-1">Nexus Advisory</p>
+<div class="flex justify-between items-center">
+<span class="text-[10px] text-[#5C6478]">£3,200/mo</span>
+<span class="text-[9px] bg-primary-container text-white px-1.5 py-0.5 rounded uppercase font-bold">SME</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 4 -->
+<div class="flex-shrink-0 w-64">
+<div class="bg-surface-container-low p-3 rounded-t-lg mb-3 flex justify-between items-center">
+<span class="text-[11px] font-bold uppercase tracking-widest text-[#5C6478]">Signed</span>
+<span class="bg-white/50 text-[10px] px-2 py-0.5 rounded text-[#15213C]">3</span>
+</div>
+<div class="space-y-3">
+<div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-secondary">
+<p class="text-xs font-bold text-[#15213C] mb-1">Apex FinTech</p>
+<div class="flex justify-between items-center">
+<span class="text-[10px] text-[#5C6478]">£4,500/mo</span>
+<span class="text-[9px] bg-primary-container text-white px-1.5 py-0.5 rounded uppercase font-bold">SME</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Revenue Targets -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_12px_40px_rgba(21,33,60,0.06)] border border-white">
+<h2 class="text-xl font-bold text-[#15213C] mb-8">Revenue Targets</h2>
+<div class="space-y-8">
+<div>
+<div class="flex justify-between items-center mb-3">
+<span class="text-sm font-semibold text-[#15213C]">Consulting MRR</span>
+<span class="text-sm font-bold text-secondary">£32k / £40k</span>
+</div>
+<div class="w-full bg-surface-container-low h-3 rounded-full overflow-hidden">
+<div class="bg-secondary h-full transition-all duration-1000" style="width: 80%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-3">
+<span class="text-sm font-semibold text-[#15213C]">SaaS ARR (pilot)</span>
+<span class="text-sm font-bold text-secondary">£12k / £50k</span>
+</div>
+<div class="w-full bg-surface-container-low h-3 rounded-full overflow-hidden">
+<div class="bg-secondary h-full opacity-60 transition-all duration-1000" style="width: 24%"></div>
+</div>
+</div>
+<div class="pt-6 border-t border-[#F3F4F5]">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<p class="text-xs text-[#5C6478] font-medium">Growth Velocity</p>
+<p class="text-lg font-extrabold text-[#15213C]">14.2% MoM</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- 30-Day Milestones -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_12px_40px_rgba(21,33,60,0.06)]">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-xl font-bold text-[#15213C]">30-Day Milestones</h2>
+<span class="material-symbols-outlined text-[#5C6478] cursor-pointer" data-icon="more_horiz">more_horiz</span>
+</div>
+<div class="space-y-8">
+<div>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-secondary mb-3">Marketing</h4>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded text-secondary focus:ring-secondary border-outline-variant/30" type="checkbox"/>
+<span class="text-sm text-[#15213C] group-hover:text-secondary transition-colors">Launch 'Ledger Wisdom' Newsletter</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded text-secondary focus:ring-secondary border-outline-variant/30" type="checkbox"/>
+<span class="text-sm text-[#15213C] group-hover:text-secondary transition-colors">Finalise Q4 Content Pillars</span>
+</label>
+</div>
+</div>
+<div>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-[#5C6478] mb-3">Platform</h4>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded text-secondary focus:ring-secondary border-outline-variant/30" type="checkbox"/>
+<span class="text-sm text-[#15213C] group-hover:text-secondary transition-colors">Beta integration with Xero API</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded text-secondary focus:ring-secondary border-outline-variant/30" type="checkbox"/>
+<span class="text-sm text-[#15213C] group-hover:text-secondary transition-colors">New Client Onboarding Flow</span>
+</label>
+</div>
+</div>
+<div>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-[#5C6478] mb-3">Consulting</h4>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded text-secondary focus:ring-secondary border-outline-variant/30" type="checkbox"/>
+<span class="text-sm text-[#15213C] group-hover:text-secondary transition-colors">Upsell Proposal: Modern Ledger Ltd</span>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Content Queue -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_12px_40px_rgba(21,33,60,0.06)]">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-xl font-bold text-[#15213C]">Content Queue</h2>
+<button class="text-xs font-bold text-[#15213C] bg-surface-container-low px-3 py-1.5 rounded-lg hover:bg-surface-variant transition-colors">Add Post</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-high/30">
+<th class="text-[10px] font-bold uppercase tracking-widest p-4 text-[#5C6478]">Channel</th>
+<th class="text-[10px] font-bold uppercase tracking-widest p-4 text-[#5C6478]">Topic</th>
+<th class="text-[10px] font-bold uppercase tracking-widest p-4 text-[#5C6478]">Status</th>
+<th class="text-[10px] font-bold uppercase tracking-widest p-4 text-[#5C6478]">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#F3F4F5]">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-[#15213C] flex items-center justify-center text-[8px] text-white font-bold">F</div>
+<span class="text-xs font-semibold text-[#15213C]">Femi</span>
+</div>
+</td>
+<td class="p-4 text-xs font-medium text-[#15213C]">The Future of Fractional CFOs</td>
+<td class="p-4">
+<span class="text-[9px] font-bold uppercase bg-secondary-container/20 text-secondary px-2 py-0.5 rounded">Queued</span>
+</td>
+<td class="p-4 text-[11px] text-[#5C6478] font-medium tabular-nums">Oct 24</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center text-[8px] text-on-secondary-container font-bold">BL</div>
+<span class="text-xs font-semibold text-[#15213C]">B&amp;L</span>
+</div>
+</td>
+<td class="p-4 text-xs font-medium text-[#15213C]">Unlocking SaaS Efficiency</td>
+<td class="p-4">
+<span class="text-[9px] font-bold uppercase bg-surface-container-low text-[#5C6478] px-2 py-0.5 rounded">Draft</span>
+</td>
+<td class="p-4 text-[11px] text-[#5C6478] font-medium tabular-nums">Oct 26</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-[#15213C] flex items-center justify-center text-[8px] text-white font-bold">F</div>
+<span class="text-xs font-semibold text-[#15213C]">Femi</span>
+</div>
+</td>
+<td class="p-4 text-xs font-medium text-[#15213C]">Navigating UK Tax Changes</td>
+<td class="p-4">
+<span class="text-[9px] font-bold uppercase bg-secondary-container/20 text-secondary px-2 py-0.5 rounded">Queued</span>
+</td>
+<td class="p-4 text-[11px] text-[#5C6478] font-medium tabular-nums">Oct 28</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+<!-- NavigationDrawer (Desktop Hidden Logic) -->
+<aside class="hidden xl:flex flex-col gap-2 p-6 h-screen w-72 fixed left-0 top-0 bg-[#F8F9FA] dark:bg-[#000A24] z-40 transition-all border-r border-[#F3F4F5]">
+<div class="mb-10 mt-4">
+<span class="font-['Manrope'] font-bold text-xl text-[#15213C] dark:text-white">Beacon &amp; Ledger</span>
+</div>
+<nav class="flex flex-col gap-2">
+<div class="bg-[#FFFFFF] dark:bg-[#15213C] text-[#006B57] dark:text-[#67FAD5] rounded-lg shadow-sm font-bold flex items-center gap-3 p-3 hover:translate-x-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm">Dashboard</span>
+</div>
+<div class="text-[#5C6478] dark:text-slate-400 hover:text-[#15213C] flex items-center gap-3 p-3 hover:translate-x-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="text-sm">Ledger</span>
+</div>
+<div class="text-[#5C6478] dark:text-slate-400 hover:text-[#15213C] flex items-center gap-3 p-3 hover:translate-x-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="skillet">skillet</span>
+<span class="text-sm">Advisory</span>
+</div>
+<div class="text-[#5C6478] dark:text-slate-400 hover:text-[#15213C] flex items-center gap-3 p-3 hover:translate-x-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="text-sm">Strategy</span>
+</div>
+<div class="mt-auto pt-6 border-t border-[#F3F4F5]">
+<div class="text-[#5C6478] dark:text-slate-400 hover:text-[#15213C] flex items-center gap-3 p-3 hover:translate-x-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm">Settings</span>
+</div>
+</div>
+</nav>
+</aside>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full rounded-t-[24px] z-50 md:hidden bg-white/90 dark:bg-[#000A24]/90 backdrop-blur-md shadow-[0_-10px_30px_rgba(21,33,60,0.08)] flex justify-around items-center h-20 px-6 pb-safe border-t border-[#F3F4F5]/30">
+<a class="flex flex-col items-center justify-center text-[#006B57] dark:text-[#67FAD5] relative after:content-[''] after:absolute after:-bottom-1 after:w-1 after:h-1 after:bg-[#006B57] after:rounded-full" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Inter'] text-[11px] font-semibold uppercase tracking-wider">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5C6478] dark:text-slate-500 opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+<span class="font-['Inter'] text-[11px] font-semibold uppercase tracking-wider">Ledger</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5C6478] dark:text-slate-500 opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="font-['Inter'] text-[11px] font-semibold uppercase tracking-wider">Growth</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5C6478] dark:text-slate-500 opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-['Inter'] text-[11px] font-semibold uppercase tracking-wider">Profile</span>
+</a>
+</nav>
+</body></html>
