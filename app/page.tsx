@@ -5,7 +5,7 @@ import { DEFAULT_CONTENT } from '@/lib/defaults'
 import { ContentItem, ContentStatus } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 
-// ── Types for Supabase data ──────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────
 interface DbLead {
   id: string
   name: string | null
@@ -38,7 +38,33 @@ interface DbRevenue {
   updated_at: string
 }
 
-// ── Shared inline style helpers (CSS variable based) ─────────────
+// ── Lead pipeline stages (canonical order) ───────────────────────
+const LEAD_STAGES = ['Discovery', 'Proposal', 'Negotiation', 'Signed', 'Lost'] as const
+type LeadStage = typeof LEAD_STAGES[number]
+
+const LEAD_STAGE_COLORS: Record<LeadStage, string> = {
+  Discovery: '#7C8CF8',
+  Proposal: '#F59E0B',
+  Negotiation: '#F97316',
+  Signed: '#34D399',
+  Lost: '#F87171',
+}
+
+const LEAD_SOURCES = ['CompanyQuery', 'LinkedIn', 'Referral', 'Inbound', 'Event', 'Manual'] as const
+type LeadSource = typeof LEAD_SOURCES[number]
+
+const SOURCE_COLORS: Record<string, string> = {
+  CompanyQuery: '#53E9C5',
+  LinkedIn: '#7C8CF8',
+  Referral: '#F59E0B',
+  Inbound: '#34D399',
+  Event: '#F97316',
+  Manual: '#8892A4',
+  'Companies House Search': '#53E9C5',
+  'ai_onboarding': '#A78BFA',
+}
+
+// ── Shared styles ────────────────────────────────────────────────
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-card)',
   border: '1px solid var(--border)',
@@ -71,24 +97,34 @@ const selectStyle: React.CSSProperties = {
   fontFamily: 'inherit',
 }
 
-function Input({ value, onChange, placeholder, type = 'text', small }: { value: string | number; onChange: (v: string) => void; placeholder?: string; type?: string; small?: boolean }) {
-  return <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} style={inputStyle(small)} />
+function Input({ value, onChange, placeholder, type = 'text', small, onBlur }: { value: string | number; onChange: (v: string) => void; placeholder?: string; type?: string; small?: boolean; onBlur?: () => void }) {
+  return <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} onBlur={onBlur} style={inputStyle(small)} />
 }
 
 function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return <select value={value} onChange={e => onChange(e.target.value)} style={selectStyle}>{options.map(o => <option key={o}>{o}</option>)}</select>
 }
 
-function Btn({ onClick, children, variant = 'ghost' }: { onClick?: () => void; children: React.ReactNode; variant?: 'ghost' | 'primary' | 'danger' }) {
+function Btn({ onClick, children, variant = 'ghost', small }: { onClick?: () => void; children: React.ReactNode; variant?: 'ghost' | 'primary' | 'danger'; small?: boolean }) {
   const styles: Record<string, React.CSSProperties> = {
     ghost: { background: 'var(--bg-primary)', color: 'var(--text-muted)', border: '1px solid var(--border)' },
     primary: { background: 'var(--accent)', color: 'var(--bg-primary)', border: '1px solid var(--accent)' },
     danger: { background: 'transparent', color: '#F87171', border: '1px solid rgba(248,113,113,0.4)' },
   }
   return (
-    <button onClick={onClick} style={{ ...styles[variant], padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}>
+    <button onClick={onClick} style={{ ...styles[variant], padding: small ? '4px 10px' : '8px 16px', borderRadius: 8, fontSize: small ? 11 : 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit', transition: 'opacity 0.15s' }}>
       {children}
     </button>
+  )
+}
+
+function SourceTag({ source }: { source: string | null }) {
+  if (!source) return null
+  const color = SOURCE_COLORS[source] || 'var(--text-muted)'
+  return (
+    <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: color + '22', color, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+      {source}
+    </span>
   )
 }
 
@@ -98,7 +134,7 @@ function KpiBar({ leads, milestones, content, consultingTarget }: { leads: DbLea
   const pct = consultingTarget > 0 ? Math.min(100, Math.round((signedMrr / consultingTarget) * 100)) : 0
   const done = milestones.filter(m => m.done).length
   const published = content.filter(c => c.status === 'Published').length
-  const active = leads.filter(l => !['Dead', 'Lost', 'Passed'].includes(l.status)).length
+  const active = leads.filter(l => !['Lost', 'Dead', 'Passed'].includes(l.status)).length
 
   const mkCard = (icon: string, badgeText: string, title: string, value: string | number) => (
     <div style={{ ...cardStyle, cursor: 'default' }}>
@@ -121,87 +157,287 @@ function KpiBar({ leads, milestones, content, consultingTarget }: { leads: DbLea
   )
 }
 
-// ── PIPELINE ──────────────────────────────────────────────────────
-function Pipeline({ leads, stages, onUpdate, onAdd, onDelete }: {
+// ── KANBAN PIPELINE (drag & drop + full CRUD) ────────────────────
+function Pipeline({ leads, onUpdate, onAdd, onEdit, onDelete }: {
   leads: DbLead[]
-  stages: string[]
-  onUpdate: (id: string, status: string) => void
+  onUpdate: (id: string, updates: Partial<DbLead>) => void
   onAdd: (lead: { company_name: string; business_type: string; status: string; notes: string; source: string }) => void
+  onEdit: (id: string, updates: Partial<DbLead>) => void
   onDelete: (id: string) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', type: 'Accountant', stage: stages[0] || 'New', note: '' })
+  const [addOpen, setAddOpen] = useState(false)
+  const [addForm, setAddForm] = useState({ name: '', type: 'SME', stage: 'Discovery' as string, note: '', source: 'Manual' as string })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<{ company_name: string; business_type: string; notes: string; source: string; revenue: string }>({ company_name: '', business_type: '', notes: '', source: '', revenue: '' })
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null)
 
-  function add() {
-    if (!form.name.trim()) return
-    onAdd({ company_name: form.name, business_type: form.type, status: form.stage, notes: form.note, source: 'Dashboard' })
-    setForm({ name: '', type: 'Accountant', stage: stages[0] || 'New', note: '' })
-    setOpen(false)
+  function handleAdd() {
+    if (!addForm.name.trim()) return
+    onAdd({ company_name: addForm.name, business_type: addForm.type, status: addForm.stage, notes: addForm.note, source: addForm.source })
+    setAddForm({ name: '', type: 'SME', stage: 'Discovery', note: '', source: 'Manual' })
+    setAddOpen(false)
   }
 
-  const stageAccentOpacity = (idx: number, total: number) => {
-    const base = 0.2
-    const step = (1 - base) / Math.max(total - 1, 1)
-    return base + step * idx
+  function startEdit(lead: DbLead) {
+    setEditingId(lead.id)
+    setEditForm({
+      company_name: lead.company_name || '',
+      business_type: lead.business_type || 'SME',
+      notes: lead.notes || '',
+      source: lead.source || 'Manual',
+      revenue: lead.revenue ? String(lead.revenue) : '',
+    })
   }
+
+  function saveEdit() {
+    if (!editingId) return
+    onEdit(editingId, {
+      company_name: editForm.company_name,
+      business_type: editForm.business_type,
+      notes: editForm.notes,
+      source: editForm.source,
+      revenue: Number(editForm.revenue) || null,
+    })
+    setEditingId(null)
+  }
+
+  // ── Drag handlers ──
+  function onDragStart(e: React.DragEvent, id: string) {
+    setDragId(id)
+    e.dataTransfer.effectAllowed = 'move'
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.4'
+    }
+  }
+
+  function onDragEnd(e: React.DragEvent) {
+    setDragId(null)
+    setDragOverStage(null)
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1'
+    }
+  }
+
+  function onDragOver(e: React.DragEvent, stage: string) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverStage(stage)
+  }
+
+  function onDragLeave() {
+    setDragOverStage(null)
+  }
+
+  function onDrop(e: React.DragEvent, stage: string) {
+    e.preventDefault()
+    setDragOverStage(null)
+    if (dragId) {
+      const lead = leads.find(l => l.id === dragId)
+      if (lead && lead.status !== stage) {
+        onUpdate(dragId, { status: stage })
+      }
+    }
+    setDragId(null)
+  }
+
+  const stageColor = (stage: string) => LEAD_STAGE_COLORS[stage as LeadStage] || 'var(--text-muted)'
 
   return (
-    <section style={{ gridColumn: 'span 2' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+    <section style={{ gridColumn: '1 / -1' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Sales Pipeline</h2>
-        <button onClick={() => setOpen(!open)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <button onClick={() => setAddOpen(!addOpen)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span> Add Lead
         </button>
       </div>
 
-      {open && (
-        <div style={{ ...cardStyle, marginBottom: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-          <Input placeholder="Company name" value={form.name} onChange={v => setForm({ ...form, name: v })} />
-          <Select value={form.type} onChange={v => setForm({ ...form, type: v })} options={['Accountant', 'SME']} />
-          <Select value={form.stage} onChange={v => setForm({ ...form, stage: v })} options={stages} />
+      {/* Add lead form */}
+      {addOpen && (
+        <div style={{ ...cardStyle, marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+          <Input placeholder="Company name" value={addForm.name} onChange={v => setAddForm({ ...addForm, name: v })} />
+          <Select value={addForm.type} onChange={v => setAddForm({ ...addForm, type: v })} options={['Accountant', 'SME']} />
+          <Select value={addForm.stage} onChange={v => setAddForm({ ...addForm, stage: v })} options={[...LEAD_STAGES]} />
+          <Select value={addForm.source} onChange={v => setAddForm({ ...addForm, source: v })} options={[...LEAD_SOURCES]} />
           <div style={{ gridColumn: '1 / -1' }}>
-            <Input placeholder="Note (optional)" value={form.note} onChange={v => setForm({ ...form, note: v })} />
+            <Input placeholder="Notes (optional)" value={addForm.note} onChange={v => setAddForm({ ...addForm, note: v })} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Btn variant="primary" onClick={add}>Save</Btn>
-            <Btn onClick={() => setOpen(false)}>Cancel</Btn>
+            <Btn variant="primary" onClick={handleAdd}>Save</Btn>
+            <Btn onClick={() => setAddOpen(false)}>Cancel</Btn>
           </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 16 }} className="custom-scrollbar">
-        {stages.map((stage, stageIdx) => (
-          <div key={stage} style={{ flexShrink: 0, width: 256 }}>
-            <div style={{ background: 'var(--bg-mid)', padding: 12, borderRadius: '8px 8px 0 0', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{stage}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{leads.filter(l => l.status === stage).length}</span>
+      {/* Kanban board */}
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 16 }} className="custom-scrollbar">
+        {LEAD_STAGES.map(stage => {
+          const stageLeads = leads.filter(l => l.status === stage)
+          const isOver = dragOverStage === stage
+          const color = stageColor(stage)
+
+          return (
+            <div
+              key={stage}
+              onDragOver={e => onDragOver(e, stage)}
+              onDragLeave={onDragLeave}
+              onDrop={e => onDrop(e, stage)}
+              style={{
+                flexShrink: 0,
+                width: 260,
+                minHeight: 200,
+                background: isOver ? color + '11' : 'transparent',
+                borderRadius: 12,
+                transition: 'background 0.15s',
+                border: isOver ? `2px dashed ${color}44` : '2px dashed transparent',
+              }}
+            >
+              {/* Column header */}
+              <div style={{ background: 'var(--bg-mid)', padding: '10px 14px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `3px solid ${color}` }}>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color }}>{stage}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: color + '22', color }}>{stageLeads.length}</span>
+              </div>
+
+              {/* Cards */}
+              <div style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 100 }}>
+                {stageLeads.map(lead => {
+                  const isEditing = editingId === lead.id
+                  const isDragging = dragId === lead.id
+
+                  if (isEditing) {
+                    return (
+                      <div key={lead.id} style={{ ...cardStyle, padding: 12, borderLeft: `4px solid ${color}` }}>
+                        <Input small placeholder="Company name" value={editForm.company_name} onChange={v => setEditForm({ ...editForm, company_name: v })} />
+                        <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          <Select value={editForm.business_type} onChange={v => setEditForm({ ...editForm, business_type: v })} options={['Accountant', 'SME']} />
+                          <Select value={editForm.source} onChange={v => setEditForm({ ...editForm, source: v })} options={[...LEAD_SOURCES, 'Companies House Search', 'ai_onboarding']} />
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <Input small placeholder="Revenue (£/mo)" type="number" value={editForm.revenue} onChange={v => setEditForm({ ...editForm, revenue: v })} />
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <Input small placeholder="Notes" value={editForm.notes} onChange={v => setEditForm({ ...editForm, notes: v })} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                          <Btn small variant="primary" onClick={saveEdit}>Save</Btn>
+                          <Btn small onClick={() => setEditingId(null)}>Cancel</Btn>
+                          <Btn small variant="danger" onClick={() => { onDelete(lead.id); setEditingId(null) }}>Delete</Btn>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div
+                      key={lead.id}
+                      draggable
+                      onDragStart={e => onDragStart(e, lead.id)}
+                      onDragEnd={onDragEnd}
+                      style={{
+                        ...cardStyle,
+                        padding: 14,
+                        borderLeft: `4px solid ${color}`,
+                        cursor: isDragging ? 'grabbing' : 'grab',
+                        opacity: isDragging ? 0.4 : 1,
+                        userSelect: 'none',
+                      }}
+                    >
+                      {/* Name + edit button */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3, flex: 1 }}>
+                          {lead.company_name || lead.name || 'Unnamed'}
+                        </p>
+                        <button
+                          onClick={() => startEdit(lead)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2, flexShrink: 0 }}
+                          title="Edit lead"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
+                        </button>
+                      </div>
+
+                      {/* Source + type tags */}
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+                        <SourceTag source={lead.source} />
+                        {lead.business_type && (
+                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-mid)', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                            {lead.business_type}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Revenue if set */}
+                      {(lead.revenue || 0) > 0 && (
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginBottom: 6 }}>
+                          £{(lead.revenue || 0).toLocaleString()}/mo
+                        </div>
+                      )}
+
+                      {/* Notes */}
+                      {lead.notes && (
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: 4 }}>{lead.notes}</p>
+                      )}
+
+                      {/* Date */}
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', opacity: 0.7 }}>
+                        {new Date(lead.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {/* Empty state per column */}
+                {stageLeads.length === 0 && (
+                  <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11, opacity: 0.5 }}>
+                    Drop leads here
+                  </div>
+                )}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {leads.filter(l => l.status === stage).map(lead => (
-                <div key={lead.id} style={{ ...cardStyle, padding: 16, borderLeft: `4px solid var(--accent)`, borderLeftColor: `rgba(83,233,197,${stageAccentOpacity(stageIdx, stages.length)})`, position: 'relative' }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{lead.company_name || lead.name || 'Unnamed'}</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>
-                      {(lead.revenue || 0) > 0 ? `£${(lead.revenue || 0).toLocaleString()}/mo` : lead.source || '-'}
-                    </span>
-                    {lead.business_type && (
-                      <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', background: lead.business_type === 'SME' ? 'var(--accent)' : 'var(--bg-mid)', color: lead.business_type === 'SME' ? 'var(--bg-primary)' : 'var(--text-primary)' }}>{lead.business_type}</span>
-                    )}
-                  </div>
-                  {lead.notes && <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>{lead.notes}</div>}
-                  {/* Stage move + delete actions */}
-                  <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                    {stages.filter(s => s !== stage).slice(0, 2).map(s => (
-                      <button key={s} onClick={() => onUpdate(lead.id, s)} title={`Move to ${s}`} style={{ fontSize: 10, padding: '2px 6px', background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>→ {s}</button>
-                    ))}
-                    <button onClick={() => onDelete(lead.id)} style={{ fontSize: 10, padding: '2px 6px', background: 'transparent', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 4, color: '#F87171', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
-                  </div>
+          )
+        })}
+      </div>
+
+      {/* Leads outside canonical stages */}
+      {(() => {
+        const stageSet = new Set(LEAD_STAGES as readonly string[])
+        const unmapped = leads.filter(l => !stageSet.has(l.status))
+        if (unmapped.length === 0) return null
+        return (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Unmapped ({unmapped.length}) — drag to a stage above to categorise
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {unmapped.map(lead => (
+                <div
+                  key={lead.id}
+                  draggable
+                  onDragStart={e => onDragStart(e, lead.id)}
+                  onDragEnd={onDragEnd}
+                  style={{
+                    ...cardStyle,
+                    padding: '8px 14px',
+                    cursor: 'grab',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    borderLeft: '4px solid var(--text-muted)',
+                    opacity: dragId === lead.id ? 0.4 : 1,
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.company_name || lead.name || 'Unnamed'}</span>
+                  <SourceTag source={lead.source} />
+                  <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-mid)', color: 'var(--text-muted)' }}>{lead.status}</span>
+                  <button onClick={() => startEdit(lead)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
+                  </button>
                 </div>
               ))}
             </div>
           </div>
-        ))}
-      </div>
+        )
+      })()}
     </section>
   )
 }
@@ -350,7 +586,7 @@ function ContentQueue({ content, setContent }: { content: ContentItem[]; setCont
               <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: 99, background: item.channel === 'Femi' ? 'var(--text-primary)' : 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: item.channel === 'Femi' ? 'var(--bg-primary)' : 'var(--bg-primary)' }}>
+                    <div style={{ width: 24, height: 24, borderRadius: 99, background: item.channel === 'Femi' ? 'var(--text-primary)' : 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'var(--bg-primary)' }}>
                       {item.channel === 'Femi' ? 'F' : 'BL'}
                     </div>
                     <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{item.channel}</span>
@@ -388,7 +624,6 @@ export default function Dashboard() {
   const [leads, setLeads] = useState<DbLead[]>([])
   const [milestones, setMilestones] = useState<DbRoadmap[]>([])
   const [revenue, setRevenue] = useState<DbRevenue>({ id: '', consulting_target: 10500, saas_target: 10000, updated_at: '' })
-  const [stages, setStages] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [content, setContentRaw, contentLoaded] = useLocalStorage('bl_content', DEFAULT_CONTENT)
@@ -411,9 +646,6 @@ export default function Dashboard() {
       setLeads(leadsRes.data || [])
       if (revenueRes.data) setRevenue(revenueRes.data)
       setMilestones(roadmapRes.data || [])
-
-      const distinctStatuses = Array.from(new Set((leadsRes.data || []).map(l => l.status))).filter(Boolean)
-      setStages(distinctStatuses.length > 0 ? distinctStatuses : ['New', 'Enriched', 'Outreach', 'Discovery', 'Proposal', 'Signed'])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
@@ -423,10 +655,10 @@ export default function Dashboard() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  const updateLeadStatus = async (id: string, status: string) => {
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l))
+  const updateLead = async (id: string, updates: Partial<DbLead>) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l))
     try {
-      const { error } = await supabase.from('leads').update({ status }).eq('id', id)
+      const { error } = await supabase.from('leads').update(updates).eq('id', id)
       if (error) throw error
     } catch { loadData() }
   }
@@ -488,12 +720,13 @@ export default function Dashboard() {
     <div style={{ maxWidth: 1440, margin: '0 auto', padding: '32px 24px 80px' }}>
       <KpiBar leads={leads} milestones={milestones} content={content} consultingTarget={revenue.consulting_target} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 32 }}>
-        <Pipeline leads={leads} stages={stages} onUpdate={updateLeadStatus} onAdd={addLead} onDelete={deleteLead} />
+      <Pipeline leads={leads} onUpdate={updateLead} onAdd={addLead} onEdit={updateLead} onDelete={deleteLead} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginTop: 32 }}>
         <RevenueTracker leads={leads} revenue={revenue} onUpdateTarget={updateRevenueTarget} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginTop: 32 }}>
         <Milestones milestones={milestones} onToggle={toggleMilestone} />
         <ContentQueue content={content} setContent={setContent} />
       </div>
