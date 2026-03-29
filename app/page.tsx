@@ -15,7 +15,6 @@ interface DbLead {
   notes: string | null
   source: string | null
   revenue: number | null
-  monthly_value: number | null
   annual_turnover: number | null
   created_at: string
 }
@@ -95,7 +94,7 @@ function Btn({ onClick, children, variant = 'ghost' }: { onClick?: () => void; c
 
 // ── KPI BAR ───────────────────────────────────────────────────────
 function KpiBar({ leads, milestones, content, consultingTarget }: { leads: DbLead[]; milestones: DbRoadmap[]; content: ContentItem[]; consultingTarget: number }) {
-  const signedMrr = leads.filter(l => l.status === 'Signed').reduce((s, l) => s + (l.monthly_value || l.revenue || 0), 0)
+  const signedMrr = leads.filter(l => l.status === 'Signed').reduce((s, l) => s + (l.revenue || 0), 0)
   const pct = consultingTarget > 0 ? Math.min(100, Math.round((signedMrr / consultingTarget) * 100)) : 0
   const done = milestones.filter(m => m.done).length
   const published = content.filter(c => c.status === 'Published').length
@@ -127,16 +126,16 @@ function Pipeline({ leads, stages, onUpdate, onAdd, onDelete }: {
   leads: DbLead[]
   stages: string[]
   onUpdate: (id: string, status: string) => void
-  onAdd: (lead: { company_name: string; business_type: string; status: string; notes: string; source: string; monthly_value: number }) => void
+  onAdd: (lead: { company_name: string; business_type: string; status: string; notes: string; source: string }) => void
   onDelete: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', type: 'Accountant', stage: stages[0] || 'New', note: '', value: '' })
+  const [form, setForm] = useState({ name: '', type: 'Accountant', stage: stages[0] || 'New', note: '' })
 
   function add() {
     if (!form.name.trim()) return
-    onAdd({ company_name: form.name, business_type: form.type, status: form.stage, notes: form.note, source: 'Dashboard', monthly_value: Number(form.value) || 0 })
-    setForm({ name: '', type: 'Accountant', stage: stages[0] || 'New', note: '', value: '' })
+    onAdd({ company_name: form.name, business_type: form.type, status: form.stage, notes: form.note, source: 'Dashboard' })
+    setForm({ name: '', type: 'Accountant', stage: stages[0] || 'New', note: '' })
     setOpen(false)
   }
 
@@ -158,7 +157,6 @@ function Pipeline({ leads, stages, onUpdate, onAdd, onDelete }: {
       {open && (
         <div style={{ ...cardStyle, marginBottom: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           <Input placeholder="Company name" value={form.name} onChange={v => setForm({ ...form, name: v })} />
-          <Input placeholder="Monthly value (£)" type="number" value={form.value} onChange={v => setForm({ ...form, value: v })} />
           <Select value={form.type} onChange={v => setForm({ ...form, type: v })} options={['Accountant', 'SME']} />
           <Select value={form.stage} onChange={v => setForm({ ...form, stage: v })} options={stages} />
           <div style={{ gridColumn: '1 / -1' }}>
@@ -184,7 +182,7 @@ function Pipeline({ leads, stages, onUpdate, onAdd, onDelete }: {
                   <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{lead.company_name || lead.name || 'Unnamed'}</p>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>
-                      {(lead.monthly_value || 0) > 0 ? `£${(lead.monthly_value || 0).toLocaleString()}/mo` : lead.source || '-'}
+                      {(lead.revenue || 0) > 0 ? `£${(lead.revenue || 0).toLocaleString()}/mo` : lead.source || '-'}
                     </span>
                     {lead.business_type && (
                       <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', background: lead.business_type === 'SME' ? 'var(--accent)' : 'var(--bg-mid)', color: lead.business_type === 'SME' ? 'var(--bg-primary)' : 'var(--text-primary)' }}>{lead.business_type}</span>
@@ -214,7 +212,7 @@ function RevenueTracker({ leads, revenue, onUpdateTarget }: {
   revenue: DbRevenue
   onUpdateTarget: (field: 'consulting_target' | 'saas_target', value: number) => void
 }) {
-  const signedMrr = leads.filter(l => l.status === 'Signed').reduce((s, l) => s + (l.monthly_value || l.revenue || 0), 0)
+  const signedMrr = leads.filter(l => l.status === 'Signed').reduce((s, l) => s + (l.revenue || 0), 0)
   const pctConsulting = revenue.consulting_target > 0 ? Math.min(100, (signedMrr / revenue.consulting_target) * 100) : 0
   const pctSaas = revenue.saas_target > 0 ? Math.min(100, (0 / revenue.saas_target) * 100) : 0
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -401,7 +399,7 @@ export default function Dashboard() {
     setError(null)
     try {
       const [leadsRes, revenueRes, roadmapRes] = await Promise.all([
-        supabase.from('leads').select('id,name,company_name,status,business_type,notes,source,revenue,monthly_value,annual_turnover,created_at').order('created_at', { ascending: false }),
+        supabase.from('leads').select('id,name,company_name,status,business_type,notes,source,revenue,annual_turnover,created_at').order('created_at', { ascending: false }),
         supabase.from('bl_revenue_targets').select('*').limit(1).single(),
         supabase.from('roadmap').select('*').not('week', 'is', null).order('week').order('sort_order'),
       ])
@@ -433,7 +431,7 @@ export default function Dashboard() {
     } catch { loadData() }
   }
 
-  const addLead = async (lead: { company_name: string; business_type: string; status: string; notes: string; source: string; monthly_value: number }) => {
+  const addLead = async (lead: { company_name: string; business_type: string; status: string; notes: string; source: string }) => {
     try {
       const { data, error } = await supabase.from('leads').insert(lead).select().single()
       if (error) throw error
