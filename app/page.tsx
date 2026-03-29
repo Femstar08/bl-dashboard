@@ -511,6 +511,7 @@ export default function Dashboard() {
               <Link href="/growth" className="text-[#5C6478] hover:text-[#15213C] transition-colors text-sm px-3 py-1.5 rounded-lg hover:bg-surface-container-low">Growth</Link>
               <Link href="/analytics" className="text-[#5C6478] hover:text-[#15213C] transition-colors text-sm px-3 py-1.5 rounded-lg hover:bg-surface-container-low">Analytics</Link>
               <Link href="/prospects" className="text-[#5C6478] hover:text-[#15213C] transition-colors text-sm px-3 py-1.5 rounded-lg hover:bg-surface-container-low font-medium" style={{ color: '#53E9C5' }}>Prospects</Link>
+              <Link href="/angel" className="text-sm px-3 py-1.5 rounded-lg font-medium transition-colors" style={{ background: 'rgba(124,140,248,0.1)', border: '1px solid rgba(124,140,248,0.3)', color: '#7C8CF8' }}>Angel</Link>
             </nav>
             <Link href="/content">
               <button className="bg-secondary-container text-on-secondary-container px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-sm">
