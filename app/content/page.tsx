@@ -1,31 +1,28 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, type NewsSource, type IncomingArticle } from '@/lib/supabase'
-import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, ArrowLeft, Copy, ImageIcon } from 'lucide-react'
-import Link from 'next/link'
+import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
 
-const NAVY = '#0F1B35'
-const NAVY_MID = '#162240'
-const NAVY_CARD = '#1E2F52'
-const TEAL = '#53E9C5'
-const TEAL_DIM = '#2BB89A'
-const SLATE = '#5C6478'
-const LIGHT = '#E8EDF5'
-const BORDER = 'rgba(83,233,197,0.15)'
 const AMBER = '#F59E0B'
 const GREEN = '#34D399'
 const RED = '#F87171'
 const PURPLE = '#7C8CF8'
 
+const TEAL_BG = 'rgba(83,233,197,0.13)'
+const AMBER_BG = 'rgba(245,158,11,0.13)'
+const GREEN_BG = 'rgba(52,211,153,0.13)'
+const RED_BG = 'rgba(248,113,113,0.13)'
+const PURPLE_BG = 'rgba(124,140,248,0.13)'
+
 const PROFILE_LABELS: Record<string, { label: string; color: string; desc: string }> = {
   femi:         { label: 'Femi (personal)', color: PURPLE, desc: 'AI thought leadership, no B&L mention' },
-  bl_accountant:{ label: 'B&L — Accountants', color: TEAL,   desc: 'UK practice owners, MTD/compliance focus' },
+  bl_accountant:{ label: 'B&L — Accountants', color: 'var(--accent)',   desc: 'UK practice owners, MTD/compliance focus' },
   bl_sme:       { label: 'B&L — SMEs',        color: AMBER,  desc: 'Business owners, operational clarity focus' },
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  Fetched: SLATE, AI_Drafted: PURPLE, Ready_for_Review: AMBER,
-  Approved: GREEN, Published: TEAL, Rejected: RED,
+  Fetched: 'var(--text-muted)', AI_Drafted: PURPLE, Ready_for_Review: AMBER,
+  Approved: GREEN, Published: 'var(--accent)', Rejected: RED,
 }
 
 function s(obj: React.CSSProperties): React.CSSProperties { return obj }
@@ -37,8 +34,8 @@ function Tag({ label, color }: { label: string; color: string }) {
 function Btn({ onClick, children, variant = 'ghost', disabled, small }: { onClick?: () => void; children: React.ReactNode; variant?: 'ghost'|'teal'|'danger'|'amber'; disabled?: boolean; small?: boolean }) {
   const base: React.CSSProperties = { cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1.5px solid', transition: 'opacity 0.15s', opacity: disabled ? 0.4 : 1, fontSize: small ? 11 : 13, fontWeight: 500, padding: small ? '4px 10px' : '8px 16px', background: 'transparent' }
   const variants = {
-    ghost: { borderColor: BORDER, color: LIGHT },
-    teal:  { borderColor: TEAL, color: TEAL },
+    ghost: { borderColor: 'var(--border)', color: 'var(--text-primary)' },
+    teal:  { borderColor: 'var(--accent)', color: 'var(--accent)' },
     danger:{ borderColor: RED + '66', color: RED },
     amber: { borderColor: AMBER + '66', color: AMBER },
   }
@@ -46,19 +43,19 @@ function Btn({ onClick, children, variant = 'ghost', disabled, small }: { onClic
 }
 
 function Card({ children, accent }: { children: React.ReactNode; accent?: string }) {
-  return <div style={{ background: NAVY_MID, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20, borderTop: accent ? `3px solid ${accent}` : `1px solid ${BORDER}` }}>{children}</div>
+  return <div style={{ background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, borderTop: accent ? `3px solid ${accent}` : '1px solid var(--border)' }}>{children}</div>
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: SLATE, marginBottom: 16 }}>{children}</h2>
+  return <h2 style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 16 }}>{children}</h2>
 }
 
 function Input({ value, onChange, placeholder, type = 'text' }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
-  return <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} style={{ background: NAVY_CARD, border: `1px solid ${BORDER}`, borderRadius: 8, color: LIGHT, padding: '8px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' }} />
+  return <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' }} />
 }
 
 function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: {value: string; label: string}[] }) {
-  return <select value={value} onChange={e => onChange(e.target.value)} style={{ background: NAVY_CARD, border: `1px solid ${BORDER}`, borderRadius: 8, color: LIGHT, padding: '8px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' }}>{options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
+  return <select value={value} onChange={e => onChange(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' }}>{options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
 }
 
 // ── SOURCES TAB ───────────────────────────────────────────────
@@ -108,7 +105,7 @@ function SourcesTab() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <SectionTitle>News sources</SectionTitle>
-          <p style={{ fontSize: 12, color: SLATE, marginTop: -10 }}>{active} active · {sources.length} total · n8n fetches active sources daily</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -10 }}>{active} active · {sources.length} total · n8n fetches active sources daily</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Btn variant="ghost" onClick={load} small><RefreshCw size={12} /> Refresh</Btn>
@@ -133,22 +130,22 @@ function SourcesTab() {
       )}
 
       {loading ? (
-        <p style={{ color: SLATE, fontSize: 13, padding: '20px 0' }}>Loading sources...</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '20px 0' }}>Loading sources...</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: adding ? 12 : 0 }}>
           {sources.map(source => (
-            <div key={source.id} style={{ background: NAVY_MID, border: `1px solid ${source.is_active ? BORDER : 'rgba(255,255,255,0.04)'}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, opacity: source.is_active ? 1 : 0.5 }}>
-              <button onClick={() => toggle(source)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: source.is_active ? TEAL : SLATE, display: 'flex', padding: 0 }}>
+            <div key={source.id} style={{ background: 'var(--bg-mid)', border: `1px solid ${source.is_active ? 'var(--border)' : 'rgba(255,255,255,0.04)'}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, opacity: source.is_active ? 1 : 0.5 }}>
+              <button onClick={() => toggle(source)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: source.is_active ? 'var(--accent)' : 'var(--text-muted)', display: 'flex', padding: 0 }}>
                 {source.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
               </button>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: LIGHT, marginBottom: 2 }}>{source.name}</div>
-                <div style={{ fontSize: 11, color: SLATE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{source.url}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{source.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{source.url}</div>
               </div>
-              <Tag label={source.feed_type} color={TEAL} />
-              <Tag label={source.fetch_frequency} color={SLATE} />
-              <a href={source.url} target="_blank" rel="noreferrer" style={{ color: SLATE, display: 'flex' }}><ExternalLink size={14} /></a>
-              <button onClick={() => remove(source.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: SLATE, display: 'flex', padding: 0 }}><Trash2 size={14} /></button>
+              <Tag label={source.feed_type} color={'var(--accent)'} />
+              <Tag label={source.fetch_frequency} color={'var(--text-muted)'} />
+              <a href={source.url} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', display: 'flex' }}><ExternalLink size={14} /></a>
+              <button onClick={() => remove(source.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}><Trash2 size={14} /></button>
             </div>
           ))}
         </div>
@@ -184,10 +181,10 @@ function QueueTab({ onApprove }: { onApprove: (article: IncomingArticle) => void
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <SectionTitle>Story queue</SectionTitle>
-          <p style={{ fontSize: 12, color: SLATE, marginTop: -10 }}>{articles.length} stories · updated daily by n8n</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -10 }}>{articles.length} stories · updated daily by n8n</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select value={filter} onChange={e => setFilter(e.target.value)} style={{ background: NAVY_CARD, border: `1px solid ${BORDER}`, borderRadius: 8, color: LIGHT, padding: '6px 12px', fontSize: 12, outline: 'none', fontFamily: 'inherit' }}>
+          <select value={filter} onChange={e => setFilter(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '6px 12px', fontSize: 12, outline: 'none', fontFamily: 'inherit' }}>
             {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <Btn variant="ghost" onClick={load} small><RefreshCw size={12} /> Refresh</Btn>
@@ -195,32 +192,32 @@ function QueueTab({ onApprove }: { onApprove: (article: IncomingArticle) => void
       </div>
 
       {loading ? (
-        <p style={{ color: SLATE, fontSize: 13 }}>Loading queue...</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading queue...</p>
       ) : articles.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: SLATE }}>
-          <p style={{ fontSize: 14 }}>No stories with status "{filter}"</p>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: 14 }}>No stories with status &quot;{filter}&quot;</p>
           <p style={{ fontSize: 12, marginTop: 6 }}>n8n fetches new stories daily from active sources</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {articles.map(article => (
-            <div key={article.id} style={{ background: NAVY_MID, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
+            <div key={article.id} style={{ background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 12, padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: LIGHT, marginBottom: 4, lineHeight: 1.4 }}>{article.original_title}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 }}>{article.original_title}</div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Tag label={article.status} color={STATUS_COLOR[article.status] || SLATE} />
-                    {article.profile_target && <Tag label={PROFILE_LABELS[article.profile_target]?.label || article.profile_target} color={PROFILE_LABELS[article.profile_target]?.color || SLATE} />}
-                    <span style={{ fontSize: 11, color: SLATE }}>{new Date(article.fetched_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    <Tag label={article.status} color={STATUS_COLOR[article.status] || 'var(--text-muted)'} />
+                    {article.profile_target && <Tag label={PROFILE_LABELS[article.profile_target]?.label || article.profile_target} color={PROFILE_LABELS[article.profile_target]?.color || 'var(--text-muted)'} />}
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(article.fetched_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
-                <a href={article.original_url} target="_blank" rel="noreferrer" style={{ color: SLATE, display: 'flex', flexShrink: 0 }}><ExternalLink size={14} /></a>
+                <a href={article.original_url} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', display: 'flex', flexShrink: 0 }}><ExternalLink size={14} /></a>
               </div>
-              {article.ai_summary && <p style={{ fontSize: 13, color: LIGHT, opacity: 0.7, lineHeight: 1.6, marginBottom: 12 }}>{article.ai_summary}</p>}
+              {article.ai_summary && <p style={{ fontSize: 13, color: 'var(--text-primary)', opacity: 0.7, lineHeight: 1.6, marginBottom: 12 }}>{article.ai_summary}</p>}
               {article.ai_rewrite && (
-                <div style={{ background: NAVY_CARD, borderRadius: 8, padding: 12, marginBottom: 12, borderLeft: `3px solid ${PURPLE}` }}>
+                <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 12, marginBottom: 12, borderLeft: `3px solid ${PURPLE}` }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: PURPLE, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Draft</p>
-                  <p style={{ fontSize: 12, color: LIGHT, opacity: 0.8, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{article.ai_rewrite.substring(0, 300)}{article.ai_rewrite.length > 300 ? '...' : ''}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-primary)', opacity: 0.8, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{article.ai_rewrite.substring(0, 300)}{article.ai_rewrite.length > 300 ? '...' : ''}</p>
                 </div>
               )}
               {filter === 'Fetched' && (
@@ -346,10 +343,10 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
   }
 
   if (!article) return (
-    <div style={{ textAlign: 'center', padding: '60px 0', color: SLATE }}>
+    <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
       <Zap size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
       <p style={{ fontSize: 14 }}>Select a story from the queue to draft a post</p>
-      <p style={{ fontSize: 12, marginTop: 6 }}>Click "Generate draft" on any Fetched story</p>
+      <p style={{ fontSize: 12, marginTop: 6 }}>Click &quot;Generate draft&quot; on any Fetched story</p>
     </div>
   )
 
@@ -358,21 +355,21 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
       <div>
         <SectionTitle>Rewrite studio</SectionTitle>
         <Card>
-          <div style={{ marginBottom: 16, padding: '12px 16px', background: NAVY_CARD, borderRadius: 8, borderLeft: `3px solid ${TEAL}` }}>
-            <div style={{ fontSize: 11, color: TEAL, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Story</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: LIGHT }}>{article.original_title}</div>
-            {article.ai_summary && <div style={{ fontSize: 12, color: SLATE, marginTop: 4, lineHeight: 1.5 }}>{article.ai_summary}</div>}
+          <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--bg-card)', borderRadius: 8, borderLeft: '3px solid var(--accent)' }}>
+            <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Story</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{article.original_title}</div>
+            {article.ai_summary && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>{article.ai_summary}</div>}
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, color: SLATE, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Post profile</label>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Post profile</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {Object.entries(PROFILE_LABELS).map(([key, p]) => (
-                <button key={key} onClick={() => setProfile(key as typeof profile)} style={{ background: profile === key ? p.color + '15' : NAVY_CARD, border: `1.5px solid ${profile === key ? p.color : BORDER}`, borderRadius: 8, padding: '10px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: profile === key ? p.color : SLATE, flexShrink: 0 }} />
+                <button key={key} onClick={() => setProfile(key as typeof profile)} style={{ background: profile === key ? p.color + '15' : 'var(--bg-card)', border: `1.5px solid ${profile === key ? p.color : 'var(--border)'}`, borderRadius: 8, padding: '10px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: profile === key ? p.color : 'var(--text-muted)', flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: LIGHT }}>{p.label}</div>
-                    <div style={{ fontSize: 11, color: SLATE }}>{p.desc}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{p.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.desc}</div>
                   </div>
                 </button>
               ))}
@@ -380,8 +377,8 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, color: SLATE, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Previous post context (optional)</label>
-            <textarea value={previousPost} onChange={e => setPreviousPost(e.target.value)} placeholder="Paste your most recent post here. Claude will write this as a natural follow-up..." rows={4} style={{ width: '100%', background: NAVY_CARD, border: `1px solid ${BORDER}`, borderRadius: 8, color: LIGHT, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Previous post context (optional)</label>
+            <textarea value={previousPost} onChange={e => setPreviousPost(e.target.value)} placeholder="Paste your most recent post here. Claude will write this as a natural follow-up..." rows={4} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
           </div>
 
           <Btn variant="teal" onClick={generate} disabled={generating}>
@@ -393,10 +390,10 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
           <div style={{ marginTop: 16 }}>
             <Card>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, color: SLATE, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Draft post</label>
-                <span style={{ fontSize: 11, color: charCount > 3000 ? RED : charCount > 2500 ? AMBER : SLATE }}>{charCount} chars {charCount > 3000 ? '(too long)' : ''}</span>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Draft post</label>
+                <span style={{ fontSize: 11, color: charCount > 3000 ? RED : charCount > 2500 ? AMBER : 'var(--text-muted)' }}>{charCount} chars {charCount > 3000 ? '(too long)' : ''}</span>
               </div>
-              <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={16} placeholder={generating ? 'Generating...' : 'Draft will appear here...'} style={{ width: '100%', background: NAVY_CARD, border: `1px solid ${BORDER}`, borderRadius: 8, color: LIGHT, padding: '12px', fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.7 }} />
+              <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={16} placeholder={generating ? 'Generating...' : 'Draft will appear here...'} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '12px', fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.7 }} />
             </Card>
           </div>
         )}
@@ -404,15 +401,15 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
         {/* Image Panel */}
         <div style={{ marginTop: 16 }}>
           <Card>
-            <label style={{ fontSize: 11, color: SLATE, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 12 }}>Article image</label>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 12 }}>Article image</label>
             {imageLoading ? (
-              <div style={{ background: NAVY_CARD, borderRadius: 8, padding: '40px 20px', textAlign: 'center' }}>
-                <div style={{ fontSize: 13, color: TEAL, fontWeight: 500 }}>Generating image... ~20 seconds</div>
+              <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '40px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>Generating image... ~20 seconds</div>
               </div>
             ) : imageUrl ? (
               <div>
                 <img src={imageUrl} alt="Generated article image" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 8, display: 'block', marginBottom: 12 }} />
-                {imagePrompt && <p style={{ fontSize: 11, color: SLATE, lineHeight: 1.5, marginBottom: 12 }}>{imagePrompt}</p>}
+                {imagePrompt && <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 12 }}>{imagePrompt}</p>}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Btn variant="ghost" onClick={() => generateImage(true)} small><RefreshCw size={12} /> Regenerate</Btn>
                   <Btn variant="ghost" onClick={copyPrompt} small><Copy size={12} /> {imageCopied ? 'Copied!' : 'Copy prompt'}</Btn>
@@ -420,49 +417,49 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
                 </div>
               </div>
             ) : (
-              <div style={{ border: `2px dashed ${BORDER}`, borderRadius: 8, padding: '32px 20px', textAlign: 'center' }}>
-                <ImageIcon size={24} style={{ color: SLATE, margin: '0 auto 10px', opacity: 0.4 }} />
-                <p style={{ fontSize: 12, color: SLATE, marginBottom: 12 }}>No image — post will be text-only</p>
+              <div style={{ border: '2px dashed var(--border)', borderRadius: 8, padding: '32px 20px', textAlign: 'center' }}>
+                <ImageIcon size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 10px', opacity: 0.4 }} />
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>No image — post will be text-only</p>
                 <Btn variant="teal" onClick={() => generateImage(false)} small><Zap size={12} /> Generate image</Btn>
               </div>
             )}
           </Card>
         </div>
 
-        {error && <div style={{ marginTop: 12, padding: '10px 14px', background: RED + '15', border: `1px solid ${RED}33`, borderRadius: 8, fontSize: 12, color: RED }}>{error}</div>}
+        {error && <div style={{ marginTop: 12, padding: '10px 14px', background: RED_BG, border: `1px solid ${RED}33`, borderRadius: 8, fontSize: 12, color: RED }}>{error}</div>}
       </div>
 
       <div>
         <SectionTitle>Schedule</SectionTitle>
         <Card>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, color: SLATE, display: 'block', marginBottom: 6 }}>Date</label>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Date</label>
             <Input type="date" value={scheduleDate} onChange={setScheduleDate} />
           </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, color: SLATE, display: 'block', marginBottom: 6 }}>Time</label>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Time</label>
             <Input type="time" value={scheduleTime} onChange={setScheduleTime} />
           </div>
-          <div style={{ marginBottom: 20, padding: '10px 12px', background: NAVY_CARD, borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: SLATE, marginBottom: 4 }}>Posting as</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: PROFILE_LABELS[profile]?.color || TEAL }}>{PROFILE_LABELS[profile]?.label}</div>
+          <div style={{ marginBottom: 20, padding: '10px 12px', background: 'var(--bg-card)', borderRadius: 8 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Posting as</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: PROFILE_LABELS[profile]?.color || 'var(--accent)' }}>{PROFILE_LABELS[profile]?.label}</div>
           </div>
           <Btn variant="teal" onClick={schedule} disabled={!draft.trim() || !scheduleDate || scheduling}>
             <Calendar size={14} />{scheduling ? 'Scheduling...' : 'Approve & schedule'}
           </Btn>
-          <p style={{ fontSize: 11, color: SLATE, marginTop: 10, lineHeight: 1.5 }}>n8n checks hourly and posts at the scheduled time via LinkedIn API</p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.5 }}>n8n checks hourly and posts at the scheduled time via LinkedIn API</p>
         </Card>
 
         <div style={{ marginTop: 16 }}>
           <Card>
-            <div style={{ fontSize: 11, color: SLATE, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Best posting times</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Best posting times</div>
             {[['Tuesday', '8–9am'], ['Wednesday', '12–1pm'], ['Thursday', '5–6pm']].map(([day, time]) => (
               <div key={day} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: LIGHT }}>{day}</span>
-                <span style={{ fontSize: 12, color: TEAL }}>{time}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>{day}</span>
+                <span style={{ fontSize: 12, color: 'var(--accent)' }}>{time}</span>
               </div>
             ))}
-            <p style={{ fontSize: 11, color: SLATE, marginTop: 8 }}>Based on UK LinkedIn engagement data</p>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>Based on UK LinkedIn engagement data</p>
           </Card>
         </div>
       </div>
@@ -500,9 +497,9 @@ function ScheduledTab() {
         <SectionTitle>Scheduled posts</SectionTitle>
         <Btn variant="ghost" onClick={load} small><RefreshCw size={12} /> Refresh</Btn>
       </div>
-      {loading ? <p style={{ color: SLATE, fontSize: 13 }}>Loading...</p> :
+      {loading ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading...</p> :
         posts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: SLATE }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
             <Calendar size={28} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
             <p style={{ fontSize: 14 }}>No posts scheduled</p>
             <p style={{ fontSize: 12, marginTop: 6 }}>Generate and approve a draft to schedule it</p>
@@ -513,12 +510,12 @@ function ScheduledTab() {
               const scheduledAt = post.scheduled_at ? new Date(post.scheduled_at) : null
               const isDue = scheduledAt && scheduledAt <= now
               return (
-                <div key={post.id} style={{ background: NAVY_MID, border: `1px solid ${isDue ? GREEN + '44' : BORDER}`, borderRadius: 12, padding: 18 }}>
+                <div key={post.id} style={{ background: 'var(--bg-mid)', border: `1px solid ${isDue ? GREEN + '44' : 'var(--border)'}`, borderRadius: 12, padding: 18 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: LIGHT, marginBottom: 6 }}>{post.original_title}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>{post.original_title}</div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {post.profile_target && <Tag label={PROFILE_LABELS[post.profile_target]?.label || post.profile_target} color={PROFILE_LABELS[post.profile_target]?.color || SLATE} />}
+                        {post.profile_target && <Tag label={PROFILE_LABELS[post.profile_target]?.label || post.profile_target} color={PROFILE_LABELS[post.profile_target]?.color || 'var(--text-muted)'} />}
                         {scheduledAt && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: isDue ? GREEN : AMBER }}>
                             <Clock size={11} />
@@ -530,7 +527,7 @@ function ScheduledTab() {
                     <Btn variant="danger" onClick={() => unschedule(post.id)} small><XCircle size={11} /> Unschedule</Btn>
                   </div>
                   {post.ai_rewrite && (
-                    <div style={{ background: NAVY_CARD, borderRadius: 8, padding: 12, fontSize: 12, color: LIGHT, opacity: 0.7, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 12, fontSize: 12, color: 'var(--text-primary)', opacity: 0.7, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                       {post.ai_rewrite.substring(0, 250)}{post.ai_rewrite.length > 250 ? '...' : ''}
                     </div>
                   )}
@@ -566,45 +563,32 @@ export default function ContentPage() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: NAVY, padding: '24px', fontFamily: 'var(--font-sans), sans-serif' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-          <Link href="/" style={{ color: SLATE, display: 'flex', textDecoration: 'none' }}><ArrowLeft size={18} /></Link>
-          <div>
-            <h1 style={{ fontFamily: 'var(--font-serif), serif', fontSize: 26, color: LIGHT, fontWeight: 400, margin: 0 }}>
-              Content <span style={{ color: TEAL }}>Intelligence</span>
-            </h1>
-            <p style={{ fontSize: 12, color: SLATE, margin: '3px 0 0' }}>AI-curated stories · Draft studio · LinkedIn scheduling</p>
-          </div>
-        </div>
-
-        {/* Tab bar */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: NAVY_MID, padding: 4, borderRadius: 10, width: 'fit-content', border: `1px solid ${BORDER}` }}>
-          {tabs.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{
-              background: tab === t.key ? NAVY_CARD : 'transparent',
-              border: tab === t.key ? `1px solid ${BORDER}` : '1px solid transparent',
-              borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'inherit',
-              fontSize: 13, fontWeight: tab === t.key ? 600 : 400,
-              color: tab === t.key ? LIGHT : SLATE,
-              display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.15s',
-            }}>
-              {t.icon}{t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab content */}
-        <div>
-          {tab === 'queue'     && <QueueTab onApprove={handleApprove} />}
-          {tab === 'studio'    && <StudioTab article={studioArticle} onScheduled={handleScheduled} />}
-          {tab === 'scheduled' && <ScheduledTab />}
-          {tab === 'sources'   && <SourcesTab />}
-        </div>
-
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-mid)', padding: 4, borderRadius: 10, width: 'fit-content', border: '1px solid var(--border)' }}>
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} style={{
+            background: tab === t.key ? 'var(--bg-card)' : 'transparent',
+            border: tab === t.key ? '1px solid var(--border)' : '1px solid transparent',
+            borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 13, fontWeight: tab === t.key ? 600 : 400,
+            color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)',
+            display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.15s',
+          }}>
+            {t.icon}{t.label}
+          </button>
+        ))}
       </div>
+
+      {/* Tab content */}
+      <div>
+        {tab === 'queue'     && <QueueTab onApprove={handleApprove} />}
+        {tab === 'studio'    && <StudioTab article={studioArticle} onScheduled={handleScheduled} />}
+        {tab === 'scheduled' && <ScheduledTab />}
+        {tab === 'sources'   && <SourcesTab />}
+      </div>
+
     </div>
   )
 }
