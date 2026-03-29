@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import {
-  ArrowLeft,
   BarChart3,
   TrendingUp,
   Award,
@@ -19,14 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-// ── Design tokens ──────────────────────────────────────────────
-const NAVY = '#0F1B35';
-const NAVY_MID = '#162240';
-const NAVY_CARD = '#1E2F52';
-const TEAL = '#53E9C5';
-const SLATE = '#5C6478';
-const LIGHT = '#E8EDF5';
-const BORDER = 'rgba(83,233,197,0.15)';
+// ── Design tokens (accent colours only) ───────────────────────
 const AMBER = '#F59E0B';
 const GREEN = '#34D399';
 const RED = '#F87171';
@@ -271,8 +262,8 @@ export default function AnalyticsPage() {
 
   // ── Styles ─────────────────────────────────────────────────
   const card: React.CSSProperties = {
-    background: NAVY_CARD,
-    border: `1px solid ${BORDER}`,
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
     borderRadius: 12,
     padding: 24,
     marginBottom: 20,
@@ -283,25 +274,26 @@ export default function AnalyticsPage() {
     fontWeight: 700,
     letterSpacing: 1.5,
     textTransform: 'uppercase' as const,
-    color: SLATE,
+    color: 'var(--text-muted)',
     marginBottom: 16,
   };
 
   const input: React.CSSProperties = {
-    background: NAVY_MID,
-    border: `1px solid ${BORDER}`,
+    background: 'var(--bg-mid)',
+    border: '1px solid var(--border)',
     borderRadius: 8,
     padding: '10px 14px',
-    color: LIGHT,
+    color: 'var(--text-primary)',
     fontSize: 14,
     width: '100%',
     outline: 'none',
     boxSizing: 'border-box' as const,
+    fontFamily: 'inherit',
   };
 
   const label: React.CSSProperties = {
     fontSize: 12,
-    color: SLATE,
+    color: 'var(--text-muted)',
     marginBottom: 4,
     display: 'block',
     fontWeight: 600,
@@ -309,34 +301,13 @@ export default function AnalyticsPage() {
 
   // ── Render ─────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: NAVY, color: LIGHT, fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Header */}
-      <div
-        style={{
-          background: NAVY_MID,
-          borderBottom: `1px solid ${BORDER}`,
-          padding: '20px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
-        <Link href="/" style={{ color: TEAL, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: LIGHT }}>Beacon &amp; Ledger</div>
-          <div style={{ fontSize: 12, color: SLATE, fontWeight: 600, letterSpacing: 1 }}>Analytics</div>
-        </div>
-      </div>
-
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'inherit' }}>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 20px' }}>
         {/* Loading state */}
         {loading && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60 }}>
-            <Loader2 size={22} color={TEAL} style={{ animation: 'spin 1s linear infinite' }} />
-            <span style={{ color: SLATE, fontSize: 14 }}>Loading analytics...</span>
-            <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            <Loader2 size={22} color={'var(--accent)'} style={{ animation: 'spin 1s linear infinite' }} />
+            <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading analytics...</span>
           </div>
         )}
 
@@ -365,7 +336,7 @@ export default function AnalyticsPage() {
             </div>
 
             {posts.length === 0 ? (
-              <div style={{ ...card, textAlign: 'center', color: SLATE, fontSize: 14, padding: 40 }}>
+              <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 40 }}>
                 No posts logged yet. Add your first post result below.
               </div>
             ) : (
@@ -374,16 +345,16 @@ export default function AnalyticsPage() {
                 <div style={card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <Award size={16} color={AMBER} />
-                    <span style={{ fontSize: 11, color: SLATE, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                       Best Post
                     </span>
                   </div>
-                  <div style={{ fontSize: 13, color: LIGHT, lineHeight: 1.5, marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 8 }}>
                     {bestPost ? bestPost.piece.title.slice(0, 60) + (bestPost.piece.title.length > 60 ? '...' : '') : '—'}
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: TEAL }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>
                     {bestPost ? fmtNum(bestPost.metrics.impressions) : '0'}{' '}
-                    <span style={{ fontSize: 11, color: SLATE, fontWeight: 500 }}>impressions</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>impressions</span>
                   </div>
                 </div>
 
@@ -391,12 +362,12 @@ export default function AnalyticsPage() {
                 <div style={card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <BarChart3 size={16} color={GREEN} />
-                    <span style={{ fontSize: 11, color: SLATE, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                       Avg Engagement
                     </span>
                   </div>
                   <div style={{ fontSize: 28, fontWeight: 700, color: GREEN }}>{avgEngagement.toFixed(1)}%</div>
-                  <div style={{ fontSize: 11, color: SLATE, marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
                     (likes + comments + shares) / impressions
                   </div>
                 </div>
@@ -405,18 +376,18 @@ export default function AnalyticsPage() {
                 <div style={card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <Users size={16} color={PURPLE} />
-                    <span style={{ fontSize: 11, color: SLATE, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                       By Profile
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: 20 }}>
                     <div>
                       <div style={{ fontSize: 24, fontWeight: 700, color: PURPLE }}>{femiCount}</div>
-                      <div style={{ fontSize: 11, color: SLATE }}>Femi</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Femi</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: TEAL }}>{blCount}</div>
-                      <div style={{ fontSize: 11, color: SLATE }}>B&amp;L</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{blCount}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>B&amp;L</div>
                     </div>
                   </div>
                 </div>
@@ -424,27 +395,27 @@ export default function AnalyticsPage() {
                 {/* Totals */}
                 <div style={card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <TrendingUp size={16} color={TEAL} />
-                    <span style={{ fontSize: 11, color: SLATE, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <TrendingUp size={16} color={'var(--accent)'} />
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                       Totals
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: LIGHT }}>{fmtNum(totalLikes)}</div>
-                      <div style={{ fontSize: 10, color: SLATE }}>Likes</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalLikes)}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Likes</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: LIGHT }}>{fmtNum(totalComments)}</div>
-                      <div style={{ fontSize: 10, color: SLATE }}>Comments</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalComments)}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Comments</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: LIGHT }}>{fmtNum(totalShares)}</div>
-                      <div style={{ fontSize: 10, color: SLATE }}>Shares</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalShares)}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Shares</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: LIGHT }}>{fmtNum(totalImpressions)}</div>
-                      <div style={{ fontSize: 10, color: SLATE }}>Impressions</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalImpressions)}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Impressions</div>
                     </div>
                   </div>
                 </div>
@@ -460,8 +431,8 @@ export default function AnalyticsPage() {
               <button
                 onClick={() => setFormOpen(!formOpen)}
                 style={{
-                  background: TEAL,
-                  color: NAVY,
+                  background: 'var(--accent)',
+                  color: 'var(--bg-primary)',
                   border: 'none',
                   borderRadius: 8,
                   padding: '8px 16px',
@@ -481,7 +452,7 @@ export default function AnalyticsPage() {
             {/* Add Post Form */}
             {formOpen && (
               <div style={{ ...card, marginBottom: 24 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: LIGHT, marginBottom: 16 }}>Log Post Result</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16 }}>Log Post Result</div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
                   {/* Platform */}
@@ -590,8 +561,8 @@ export default function AnalyticsPage() {
                     onClick={handleSubmit}
                     disabled={submitting}
                     style={{
-                      background: TEAL,
-                      color: NAVY,
+                      background: 'var(--accent)',
+                      color: 'var(--bg-primary)',
                       border: 'none',
                       borderRadius: 8,
                       padding: '10px 24px',
@@ -614,8 +585,8 @@ export default function AnalyticsPage() {
                     }}
                     style={{
                       background: 'transparent',
-                      color: SLATE,
-                      border: `1px solid ${BORDER}`,
+                      color: 'var(--text-muted)',
+                      border: '1px solid var(--border)',
                       borderRadius: 8,
                       padding: '10px 20px',
                       fontSize: 13,
@@ -631,7 +602,7 @@ export default function AnalyticsPage() {
 
             {/* Post list */}
             {posts.length === 0 ? (
-              <div style={{ ...card, textAlign: 'center', color: SLATE, fontSize: 14, padding: 40 }}>
+              <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 40 }}>
                 No posts logged yet. Click &quot;Add Post Result&quot; to start tracking.
               </div>
             ) : (
@@ -658,8 +629,8 @@ export default function AnalyticsPage() {
                                 fontWeight: 700,
                                 textTransform: 'uppercase',
                                 letterSpacing: 1,
-                                color: NAVY,
-                                background: p.piece.platform === 'linkedin' ? '#0A66C2' : TEAL,
+                                color: 'var(--bg-primary)',
+                                background: p.piece.platform === 'linkedin' ? '#0A66C2' : 'var(--accent)',
                                 padding: '2px 8px',
                                 borderRadius: 4,
                               }}
@@ -670,47 +641,47 @@ export default function AnalyticsPage() {
                               style={{
                                 fontSize: 10,
                                 fontWeight: 700,
-                                color: profile === 'Femi' ? PURPLE : TEAL,
-                                border: `1px solid ${profile === 'Femi' ? PURPLE : TEAL}`,
+                                color: profile === 'Femi' ? PURPLE : 'var(--accent)',
+                                border: `1px solid ${profile === 'Femi' ? PURPLE : 'var(--accent)'}`,
                                 padding: '2px 8px',
                                 borderRadius: 4,
                               }}
                             >
                               {profile}
                             </span>
-                            <span style={{ fontSize: 11, color: SLATE }}>{dateStr}</span>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{dateStr}</span>
                           </div>
-                          <div style={{ fontSize: 14, color: LIGHT, lineHeight: 1.5 }}>
+                          <div style={{ fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.5 }}>
                             {p.piece.title.slice(0, 100)}{p.piece.title.length > 100 ? '...' : ''}
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 16, flexShrink: 0, alignItems: 'center' }}>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: LIGHT }}>{fmtNum(p.metrics.likes)}</div>
-                            <div style={{ fontSize: 9, color: SLATE, textTransform: 'uppercase', letterSpacing: 0.5 }}>Likes</div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.likes)}</div>
+                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Likes</div>
                           </div>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: LIGHT }}>{fmtNum(p.metrics.comments)}</div>
-                            <div style={{ fontSize: 9, color: SLATE, textTransform: 'uppercase', letterSpacing: 0.5 }}>Comments</div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.comments)}</div>
+                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Comments</div>
                           </div>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: LIGHT }}>{fmtNum(p.metrics.shares)}</div>
-                            <div style={{ fontSize: 9, color: SLATE, textTransform: 'uppercase', letterSpacing: 0.5 }}>Shares</div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.shares)}</div>
+                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Shares</div>
                           </div>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{fmtNum(p.metrics.impressions)}</div>
-                            <div style={{ fontSize: 9, color: SLATE, textTransform: 'uppercase', letterSpacing: 0.5 }}>Impressions</div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>{fmtNum(p.metrics.impressions)}</div>
+                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Impressions</div>
                           </div>
                           <div
                             style={{
                               textAlign: 'center',
-                              background: NAVY_MID,
+                              background: 'var(--bg-mid)',
                               borderRadius: 8,
                               padding: '6px 12px',
                             }}
                           >
                             <div style={{ fontSize: 14, fontWeight: 700, color: GREEN }}>{engagement}%</div>
-                            <div style={{ fontSize: 9, color: SLATE, textTransform: 'uppercase', letterSpacing: 0.5 }}>Eng Rate</div>
+                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Eng Rate</div>
                           </div>
                         </div>
                       </div>
@@ -727,7 +698,7 @@ export default function AnalyticsPage() {
             </div>
 
             {weeklyStats.length === 0 ? (
-              <div style={{ ...card, textAlign: 'center', color: SLATE, fontSize: 14, padding: 40 }}>
+              <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 40 }}>
                 No outreach data found in bl_weekly_stats.
               </div>
             ) : (
@@ -735,20 +706,20 @@ export default function AnalyticsPage() {
                 {/* Funnel bars */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {[
-                    { label: 'Sent', value: funnelSent, icon: <Send size={15} color={LIGHT} />, color: LIGHT },
-                    { label: 'Accepted', value: funnelAccepted, icon: <UserCheck size={15} color={TEAL} />, color: TEAL },
+                    { label: 'Sent', value: funnelSent, icon: <Send size={15} color={'var(--text-primary)'} />, color: 'var(--text-primary)' },
+                    { label: 'Accepted', value: funnelAccepted, icon: <UserCheck size={15} color={'var(--accent)'} />, color: 'var(--accent)' },
                     { label: 'Replied', value: funnelReplied, icon: <MessageSquare size={15} color={PURPLE} />, color: PURPLE },
                     { label: 'Calls Booked', value: funnelBooked, icon: <Phone size={15} color={GREEN} />, color: GREEN },
-                  ].map((stage, i) => {
+                  ].map((stage) => {
                     const widthPct = funnelSent > 0 ? Math.max((stage.value / funnelSent) * 100, 8) : 0;
                     return (
                       <div key={stage.label}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                           {stage.icon}
-                          <span style={{ fontSize: 12, color: SLATE, fontWeight: 600, width: 100 }}>{stage.label}</span>
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, width: 100 }}>{stage.label}</span>
                           <span style={{ fontSize: 18, fontWeight: 700, color: stage.color }}>{fmtNum(stage.value)}</span>
                         </div>
-                        <div style={{ background: NAVY_MID, borderRadius: 6, height: 28, width: '100%', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ background: 'var(--bg-mid)', borderRadius: 6, height: 28, width: '100%', position: 'relative', overflow: 'hidden' }}>
                           <div
                             style={{
                               background: stage.color,
@@ -768,7 +739,7 @@ export default function AnalyticsPage() {
                 {/* Conversion rates */}
                 <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
                   {[
-                    { from: 'Sent', to: 'Accepted', rate: pct(funnelAccepted, funnelSent), color: TEAL },
+                    { from: 'Sent', to: 'Accepted', rate: pct(funnelAccepted, funnelSent), color: 'var(--accent)' },
                     { from: 'Accepted', to: 'Replied', rate: pct(funnelReplied, funnelAccepted), color: PURPLE },
                     { from: 'Replied', to: 'Booked', rate: pct(funnelBooked, funnelReplied), color: GREEN },
                   ].map((conv) => (
@@ -777,13 +748,13 @@ export default function AnalyticsPage() {
                       style={{
                         flex: 1,
                         minWidth: 140,
-                        background: NAVY_MID,
+                        background: 'var(--bg-mid)',
                         borderRadius: 8,
                         padding: '12px 16px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ fontSize: 10, color: SLATE, marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                         {conv.from} <ChevronRight size={10} /> {conv.to}
                       </div>
                       <div style={{ fontSize: 22, fontWeight: 700, color: conv.color }}>{conv.rate}</div>
