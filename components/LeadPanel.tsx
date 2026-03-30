@@ -57,6 +57,16 @@ interface Tag {
   description: string | null
 }
 
+interface LeadAction {
+  id: string
+  lead_id: string
+  action_type: string
+  notes: string | null
+  scheduled_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
 interface LeadPanelProps {
   lead: Lead
   onUpdate: (id: string, updates: Partial<Lead>) => Promise<void>
@@ -65,6 +75,26 @@ interface LeadPanelProps {
 }
 
 export type { Lead as LeadType }
+
+/* ── Constants ────────────────────────────────────────────────── */
+
+const ACTION_TYPES = [
+  'Connection Request', 'Message Sent', 'Follow-up Message',
+  'Call Scheduled', 'Call Completed', 'Proposal Sent',
+  'No Response', 'Not Interested', 'Note',
+] as const
+
+const ACTION_COLORS: Record<string, string> = {
+  'Connection Request': '#7C8CF8',
+  'Message Sent': '#53E9C5',
+  'Follow-up Message': '#F59E0B',
+  'Call Scheduled': '#F97316',
+  'Call Completed': '#34D399',
+  'Proposal Sent': '#A78BFA',
+  'No Response': '#5C6478',
+  'Not Interested': '#F87171',
+  'Note': '#5C6478',
+}
 
 /* ── Styles ────────────────────────────────────────────────────── */
 
@@ -122,6 +152,37 @@ function tagColor(tag: Tag): string {
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
 }
 
+/* ── Action date formatter ─────────────────────────────────────── */
+
+function formatActionDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+  if (d >= today) return `Today at ${time}`
+  if (d >= yesterday) return `Yesterday at ${time}`
+
+  const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000)
+  if (diffDays < 7) return `${d.toLocaleDateString('en-GB', { weekday: 'short' })} at ${time}`
+  return `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} at ${time}`
+}
+
+/* ── Action notes placeholder helper ───────────────────────────── */
+
+function actionPlaceholder(type: string): string {
+  switch (type) {
+    case 'Connection Request': return 'Connection request note...'
+    case 'Message Sent': return 'Message summary...'
+    case 'Follow-up Message': return 'Message summary...'
+    case 'Call Scheduled': return 'What is the call about...'
+    case 'Call Completed': return 'What happened on the call...'
+    case 'Proposal Sent': return 'Proposal details...'
+    default: return 'Note...'
+  }
+}
+
 /* ── Component ─────────────────────────────────────────────────── */
 
 export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPanelProps) {
@@ -142,6 +203,12 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
   const [tasksLoading, setTasksLoading] = useState(true)
   const [taskForm, setTaskForm] = useState({ title: '', due_date: '', section: '' })
   const [addingTask, setAddingTask] = useState(false)
+
+  // Actions
+  const [actions, setActions] = useState<LeadAction[]>([])
+  const [actionsLoading, setActionsLoading] = useState(true)
+  const [actionForm, setActionForm] = useState({ type: 'Note', notes: '' })
+  const [loggingAction, setLoggingAction] = useState(false)
 
   /* ── Responsive ───────────────────────────────────────────────── */
 
@@ -193,10 +260,26 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
     setTasksLoading(false)
   }, [lead.id])
 
+  /* ── Fetch actions ─────────────────────────────────────────────── */
+
+  const loadActions = useCallback(async () => {
+    setActionsLoading(true)
+    try {
+      const { data } = await supabase
+        .from('bl_lead_actions')
+        .select('*')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false })
+      if (data) setActions(data)
+    } catch {}
+    finally { setActionsLoading(false) }
+  }, [lead.id])
+
   useEffect(() => {
     fetchTags()
     fetchTasks()
-  }, [fetchTags, fetchTasks])
+    loadActions()
+  }, [fetchTags, fetchTasks, loadActions])
 
   /* ── Helpers ──────────────────────────────────────────────────── */
 
@@ -290,6 +373,50 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
       setTaskForm({ title: '', due_date: '', section: '' })
       setAddingTask(false)
     }
+  }
+
+  /* ── Action operations ─────────────────────────────────────────── */
+
+  async function logAction() {
+    if (loggingAction) return
+    setLoggingAction(true)
+    try {
+      const { data } = await supabase
+        .from('bl_lead_actions')
+        .insert({
+          lead_id: lead.id,
+          action_type: actionForm.type,
+          notes: actionForm.notes || null,
+          completed_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+
+      if (data) {
+        setActions(prev => [data as LeadAction, ...prev])
+        setActionForm({ type: 'Note', notes: '' })
+
+        // Auto-advance status based on action type
+        if (
+          actionForm.type === 'Connection Request' &&
+          (lead.status === 'New' || lead.status === 'Identified')
+        ) {
+          await onUpdate(lead.id, { status: 'Contacted' })
+        }
+        if (
+          actionForm.type === 'Call Completed' &&
+          lead.status === 'Contacted'
+        ) {
+          await onUpdate(lead.id, { status: 'Engaged' })
+        }
+      }
+    } catch {}
+    finally { setLoggingAction(false) }
+  }
+
+  async function deleteAction(actionId: string) {
+    setActions(prev => prev.filter(a => a.id !== actionId))
+    await supabase.from('bl_lead_actions').delete().eq('id', actionId)
   }
 
   /* ── Score badge colour ───────────────────────────────────────── */
@@ -936,6 +1063,148 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
                   </button>
                 )}
               </>
+            )}
+          </div>
+
+          {/* Activity Log */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={sectionTitle}>Activity Log</div>
+
+            {/* Quick-log form */}
+            <div
+              style={{
+                padding: 12,
+                background: 'var(--bg-card)',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                marginBottom: 16,
+              }}
+            >
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <select
+                  style={{ ...inputStyle, flex: 1, cursor: 'pointer' }}
+                  value={actionForm.type}
+                  onChange={e => setActionForm(f => ({ ...f, type: e.target.value }))}
+                >
+                  {ACTION_TYPES.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={logAction}
+                  disabled={loggingAction}
+                  style={{
+                    background: '#53E9C5',
+                    color: '#0F1B35',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '6px 14px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: loggingAction ? 'not-allowed' : 'pointer',
+                    opacity: loggingAction ? 0.6 : 1,
+                    fontFamily: 'inherit',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {loggingAction ? 'Logging...' : 'Log'}
+                </button>
+              </div>
+              <textarea
+                style={{ ...inputStyle, minHeight: 52, resize: 'vertical' }}
+                placeholder={actionPlaceholder(actionForm.type)}
+                value={actionForm.notes}
+                onChange={e => setActionForm(f => ({ ...f, notes: e.target.value }))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) logAction()
+                }}
+              />
+            </div>
+
+            {/* Action list */}
+            {actionsLoading ? (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Loading...</div>
+            ) : actions.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>No activity logged yet</div>
+            ) : (
+              actions.map((action, idx) => (
+                <div
+                  key={action.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 10,
+                    padding: '10px 0',
+                    borderBottom: idx < actions.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}
+                >
+                  {/* Coloured dot */}
+                  <div
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 99,
+                      background: ACTION_COLORS[action.action_type] || '#5C6478',
+                      flexShrink: 0,
+                      marginTop: 6,
+                    }}
+                  />
+
+                  {/* Middle content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: ACTION_COLORS[action.action_type] || '#5C6478',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {action.action_type}
+                    </div>
+                    {action.notes && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-muted)',
+                          marginTop: 2,
+                          lineHeight: 1.4,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {action.notes}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-muted)',
+                        opacity: 0.7,
+                        marginTop: 4,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {formatActionDate(action.created_at)}
+                    </div>
+                  </div>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => deleteAction(action.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: 2,
+                      opacity: 0.5,
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))
             )}
           </div>
         </div>
