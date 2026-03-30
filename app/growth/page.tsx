@@ -6,6 +6,7 @@ import {
   Plus, CheckCircle, AlertCircle, Users,
   ChevronDown, Clock, X, Linkedin
 } from 'lucide-react'
+import LinkedInProspectPanel from '@/components/LinkedInProspectPanel'
 
 // ── DESIGN TOKENS ───────────────────────────────────────────────
 const AMBER = '#F59E0B'
@@ -214,6 +215,7 @@ export default function GrowthPage() {
   const [editForm, setEditForm] = useState<Record<string, string>>({})
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [sendingName, setSendingName] = useState('')
+  const [prospectPanelOpen, setProspectPanelOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -491,6 +493,26 @@ export default function GrowthPage() {
               <span style={{ fontSize: 22, fontWeight: 700 }}>{contactedThisWeek}</span>
               <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>contacted this week</span>
             </div>
+            <button
+              onClick={() => setProspectPanelOpen(true)}
+              style={{
+                background: 'var(--accent)',
+                border: 'none',
+                borderRadius: 8,
+                color: 'var(--bg-primary)',
+                padding: '10px 20px',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              + Add LinkedIn Prospect
+            </button>
           </div>
         </Card>
 
@@ -649,7 +671,28 @@ export default function GrowthPage() {
 
           {/* ── Column B: New to Contact ── */}
           <div>
-            <SectionTitle>New to Contact</SectionTitle>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>NEW TO CONTACT</h2>
+              <button
+                onClick={() => setProspectPanelOpen(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1.5px solid var(--accent)',
+                  borderRadius: 8,
+                  color: 'var(--accent)',
+                  padding: '4px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                + Add Prospect
+              </button>
+            </div>
             {newLeads.length === 0 ? (
               <Card style={{ padding: 40, textAlign: 'center' }}>
                 <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>No new leads waiting</span>
@@ -964,6 +1007,13 @@ export default function GrowthPage() {
           )}
         </div>
       </div>
+
+      {prospectPanelOpen && (
+        <LinkedInProspectPanel
+          onSaved={() => { loadData(); setProspectPanelOpen(false) }}
+          onClose={() => setProspectPanelOpen(false)}
+        />
+      )}
     </div>
   )
 }
