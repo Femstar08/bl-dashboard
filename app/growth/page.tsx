@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { PROSPECT_STAGES, STAGE_COLORS, NEXT_STAGE, type ProspectStage } from '@/lib/tokens'
+import { LEAD_STAGES, LEAD_STAGE_COLORS, type LeadStage } from '@/lib/tokens'
 import {
-  Plus, Search, CheckCircle, AlertCircle, Users,
-  ChevronDown, ChevronRight, ExternalLink, Clock, X, Edit2, Linkedin
+  Plus, CheckCircle, AlertCircle, Users,
+  ChevronDown, Clock, X, Linkedin
 } from 'lucide-react'
 
 // ── DESIGN TOKENS ───────────────────────────────────────────────
@@ -12,7 +12,6 @@ const AMBER = '#F59E0B'
 const GREEN = '#34D399'
 const RED = '#F87171'
 const PURPLE = '#7C8CF8'
-const ORANGE = '#F97316'
 
 const getMonday = (date: Date): string => {
   const d = new Date(date)
@@ -26,19 +25,21 @@ const getMonday = (date: Date): string => {
 const today = new Date().toISOString().split('T')[0]
 
 // ── TYPES ───────────────────────────────────────────────────────
-interface Prospect {
+interface Lead {
   id: string
+  name: string | null
   company_name: string | null
   contact_name: string | null
-  contact_email: string | null
+  email: string | null
+  phone_number: string | null
   status: string
-  notes: string | null
-  type: string | null
+  source: string | null
+  business_type: string | null
+  linkedin_url: string | null
   next_action: string | null
   follow_up_date: string | null
   snoozed_until: string | null
-  linkedin_url: string | null
-  source: string | null
+  notes: string | null
   bl_score: number | null
   bl_priority: string | null
   bl_reason: string | null
@@ -46,10 +47,9 @@ interface Prospect {
   industry: string | null
   postcode: string | null
   region: string | null
-  converted_to_lead_id: string | null
-  converted_at: string | null
+  monthly_value: number | null
   created_at: string
-  updated_at: string
+  updated_at: string | null
 }
 
 interface WeeklyStats {
@@ -197,74 +197,30 @@ function Input(props: {
   )
 }
 
-function Select(props: {
-  value: string
-  onChange: (v: string) => void
-  options: { value: string; label: string }[]
-}) {
-  return (
-    <select
-      value={props.value}
-      onChange={(e) => props.onChange(e.target.value)}
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 8,
-        color: 'var(--text-primary)',
-        padding: '8px 12px',
-        fontSize: 13,
-        width: '100%',
-        outline: 'none',
-        fontFamily: 'inherit',
-      }}
-    >
-      {props.options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  )
-}
-
 // ── HELPERS ─────────────────────────────────────────────────────
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
 // ── MAIN COMPONENT ──────────────────────────────────────────────
 export default function GrowthPage() {
-  const [prospects, setProspects] = useState<Prospect[]>([])
+  const [leads, setLeads] = useState<Lead[]>([])
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [addFormOpen, setAddFormOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<Record<string, string>>({})
   const [channelsOpen, setChannelsOpen] = useState(false)
   const [showMoreNewCount, setShowMoreNewCount] = useState(8)
-  const [stageFilter, setStageFilter] = useState('All')
-  const [sourceFilter, setSourceFilter] = useState('All')
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // Add form state
-  const [addContact, setAddContact] = useState('')
-  const [addCompany, setAddCompany] = useState('')
-  const [addEmail, setAddEmail] = useState('')
-  const [addLinkedin, setAddLinkedin] = useState('')
-  const [addType, setAddType] = useState('SME')
-  const [addSource, setAddSource] = useState('Manual')
-  const [addStage, setAddStage] = useState('Identified')
-  const [addFollowUp, setAddFollowUp] = useState('')
-  const [addNextAction, setAddNextAction] = useState('')
-  const [addNotes, setAddNotes] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<Record<string, string>>({})
+  const [sendingId, setSendingId] = useState<string | null>(null)
+  const [sendingName, setSendingName] = useState('')
 
   const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [pRes, wRes, cRes] = await Promise.all([
-        supabase.from('bl_crm_prospects').select('*').order('created_at', { ascending: false }),
+      const [lRes, wRes, cRes] = await Promise.all([
+        supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase
           .from('bl_weekly_stats')
           .select('*')
@@ -273,10 +229,10 @@ export default function GrowthPage() {
           .limit(5),
         supabase.from('campaigns').select('*').order('name'),
       ])
-      if (pRes.error) throw pRes.error
+      if (lRes.error) throw lRes.error
       if (wRes.error) throw wRes.error
       if (cRes.error) throw cRes.error
-      setProspects((pRes.data as Prospect[]) || [])
+      setLeads((lRes.data as Lead[]) || [])
       setWeeklyStats((wRes.data as WeeklyStats[]) || [])
       setCampaigns((cRes.data as Campaign[]) || [])
     } catch (err: unknown) {
@@ -291,11 +247,11 @@ export default function GrowthPage() {
   }, [loadData])
 
   // ── MUTATIONS ───────────────────────────────────────────────
-  const updateProspect = async (id: string, updates: Partial<Prospect>) => {
-    setProspects((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
+  const updateLead = async (id: string, updates: Partial<Lead>) => {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)))
     try {
       const { error } = await supabase
-        .from('bl_crm_prospects')
+        .from('leads')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
       if (error) throw error
@@ -348,69 +304,29 @@ export default function GrowthPage() {
     }
   }
 
-  const addProspect = async () => {
-    const now = new Date().toISOString()
-    const newP: Partial<Prospect> = {
-      contact_name: addContact || null,
-      company_name: addCompany || null,
-      contact_email: addEmail || null,
-      linkedin_url: addLinkedin || null,
-      type: addType || null,
-      source: addSource || null,
-      status: addStage,
-      follow_up_date: addFollowUp || null,
-      next_action: addNextAction || null,
-      notes: addNotes || null,
-      created_at: now,
-      updated_at: now,
-    }
-    try {
-      const { data, error } = await supabase
-        .from('bl_crm_prospects')
-        .insert(newP)
-        .select()
-        .single()
-      if (error) throw error
-      if (data) setProspects((prev) => [data as Prospect, ...prev])
-      setAddFormOpen(false)
-      setAddContact('')
-      setAddCompany('')
-      setAddEmail('')
-      setAddLinkedin('')
-      setAddType('SME')
-      setAddSource('Manual')
-      setAddStage('Identified')
-      setAddFollowUp('')
-      setAddNextAction('')
-      setAddNotes('')
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to add prospect')
-    }
-  }
-
-  const startEdit = (p: Prospect) => {
-    setEditingId(p.id)
+  const startEdit = (l: Lead) => {
+    setEditingId(l.id)
     setEditForm({
-      status: p.status || '',
-      next_action: p.next_action || '',
-      follow_up_date: p.follow_up_date || '',
-      contact_name: p.contact_name || '',
-      company_name: p.company_name || '',
-      contact_email: p.contact_email || '',
-      linkedin_url: p.linkedin_url || '',
-      notes: p.notes || '',
+      status: l.status || '',
+      next_action: l.next_action || '',
+      follow_up_date: l.follow_up_date || '',
+      contact_name: l.contact_name || '',
+      company_name: l.company_name || '',
+      email: l.email || '',
+      linkedin_url: l.linkedin_url || '',
+      notes: l.notes || '',
     })
   }
 
   const saveEdit = async () => {
     if (!editingId) return
-    await updateProspect(editingId, {
-      status: editForm.status || 'Identified',
+    await updateLead(editingId, {
+      status: editForm.status || 'New',
       next_action: editForm.next_action || null,
       follow_up_date: editForm.follow_up_date || null,
       contact_name: editForm.contact_name || null,
       company_name: editForm.company_name || null,
-      contact_email: editForm.contact_email || null,
+      email: editForm.email || null,
       linkedin_url: editForm.linkedin_url || null,
       notes: editForm.notes || null,
     })
@@ -420,47 +336,32 @@ export default function GrowthPage() {
 
   // ── DERIVED DATA ────────────────────────────────────────────
   const monday = getMonday(new Date())
-  const excludedStatuses = ['Signed', 'Dead', 'Closed', 'Passed']
 
-  const overdueProspects = prospects
+  const overdueLeads = leads
     .filter(
-      (p) =>
-        p.follow_up_date &&
-        p.follow_up_date <= today &&
-        (!p.snoozed_until || p.snoozed_until < today) &&
-        !excludedStatuses.includes(p.status)
+      (l) =>
+        l.follow_up_date &&
+        l.follow_up_date <= today &&
+        (!l.snoozed_until || l.snoozed_until < today) &&
+        l.status !== 'Signed' &&
+        l.status !== 'Lost'
     )
     .sort((a, b) => (a.follow_up_date! > b.follow_up_date! ? 1 : -1))
 
-  const overdueCount = overdueProspects.length
+  const overdueCount = overdueLeads.length
 
-  const newProspects = prospects
-    .filter((p) => p.source === 'CompanyQuery' && p.status === 'Identified')
+  const newLeads = leads
+    .filter((l) => l.status === 'New')
     .sort((a, b) => (b.bl_score || 0) - (a.bl_score || 0))
 
-  const newProspectsCount = newProspects.length
+  const newLeadsCount = newLeads.length
 
-  const acceptedThisWeek = prospects.filter(
-    (p) =>
-      (p.status === 'Connected' || p.status === 'Connection Sent') &&
-      p.updated_at >= monday
+  const contactedThisWeek = leads.filter(
+    (l) => l.status === 'Contacted' && l.updated_at && l.updated_at >= monday
   ).length
 
   const currentWeekStats = weeklyStats.find((w) => w.week_starting === monday)
   const pastWeeks = weeklyStats.filter((w) => w.week_starting !== monday)
-
-  // Pipeline filtering
-  const filteredProspects = prospects.filter((p) => {
-    if (stageFilter !== 'All' && p.status !== stageFilter) return false
-    if (sourceFilter !== 'All' && p.source !== sourceFilter) return false
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      const name = (p.contact_name || '').toLowerCase()
-      const company = (p.company_name || '').toLowerCase()
-      if (!name.includes(q) && !company.includes(q)) return false
-    }
-    return true
-  })
 
   // ── RENDER ────────────────────────────────────────────────────
   if (loading) {
@@ -571,8 +472,8 @@ export default function GrowthPage() {
               }}
             >
               <Users size={18} color={'var(--accent)'} />
-              <span style={{ fontSize: 22, fontWeight: 700 }}>{newProspectsCount}</span>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>new prospects</span>
+              <span style={{ fontSize: 22, fontWeight: 700 }}>{newLeadsCount}</span>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>new leads</span>
             </div>
             <div
               style={{
@@ -587,8 +488,8 @@ export default function GrowthPage() {
               }}
             >
               <CheckCircle size={18} color={GREEN} />
-              <span style={{ fontSize: 22, fontWeight: 700 }}>{acceptedThisWeek}</span>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>accepted this week</span>
+              <span style={{ fontSize: 22, fontWeight: 700 }}>{contactedThisWeek}</span>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>contacted this week</span>
             </div>
           </div>
         </Card>
@@ -605,7 +506,7 @@ export default function GrowthPage() {
           {/* ── Column A: Follow Up Today ── */}
           <div>
             <SectionTitle>Follow Up Today</SectionTitle>
-            {overdueProspects.length === 0 ? (
+            {overdueLeads.length === 0 ? (
               <Card
                 style={{
                   display: 'flex',
@@ -623,23 +524,36 @@ export default function GrowthPage() {
               </Card>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {overdueProspects.map((p) => {
+                {overdueLeads.map((l) => {
                   const days = Math.floor(
-                    (new Date(today).getTime() - new Date(p.follow_up_date!).getTime()) / 86400000
+                    (new Date(today).getTime() - new Date(l.follow_up_date!).getTime()) / 86400000
                   )
 
-                  if (editingId === p.id) {
+                  if (editingId === l.id) {
                     return (
-                      <Card key={p.id}>
+                      <Card key={l.id}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <Select
+                          <select
                             value={editForm.status || ''}
-                            onChange={(v) => setEditForm((f) => ({ ...f, status: v }))}
-                            options={PROSPECT_STAGES.map((s) => ({
-                              value: s,
-                              label: s,
-                            }))}
-                          />
+                            onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                            style={{
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 8,
+                              color: 'var(--text-primary)',
+                              padding: '8px 12px',
+                              fontSize: 13,
+                              width: '100%',
+                              outline: 'none',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            {LEAD_STAGES.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
                           <Input
                             value={editForm.next_action || ''}
                             onChange={(v) => setEditForm((f) => ({ ...f, next_action: v }))}
@@ -670,20 +584,20 @@ export default function GrowthPage() {
                   }
 
                   return (
-                    <Card key={p.id}>
+                    <Card key={l.id}>
                       <div
                         style={{ cursor: 'pointer', marginBottom: 8 }}
-                        onClick={() => startEdit(p)}
+                        onClick={() => startEdit(l)}
                       >
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
-                          {p.contact_name || p.company_name || 'Unknown'}
+                          {l.contact_name || l.company_name || 'Unknown'}
                         </div>
-                        {p.contact_name && p.company_name && p.contact_name !== p.company_name && (
-                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.company_name}</div>
+                        {l.contact_name && l.company_name && l.contact_name !== l.company_name && (
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{l.company_name}</div>
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <Tag label={p.status} color={STAGE_COLORS[p.status as ProspectStage] || 'var(--text-muted)'} />
+                        <Tag label={l.status} color={LEAD_STAGE_COLORS[l.status as LeadStage] || 'var(--text-muted)'} />
                         <span
                           style={{
                             fontSize: 12,
@@ -694,9 +608,9 @@ export default function GrowthPage() {
                           {days === 0 ? 'Due today' : `${days} days overdue`}
                         </span>
                       </div>
-                      {p.next_action && (
+                      {l.next_action && (
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8 }}>
-                          {p.next_action}
+                          {l.next_action}
                         </div>
                       )}
                       <div style={{ display: 'flex', gap: 8 }}>
@@ -704,10 +618,9 @@ export default function GrowthPage() {
                           variant="teal"
                           small
                           onClick={() =>
-                            updateProspect(p.id, {
+                            updateLead(l.id, {
                               follow_up_date: null,
                               next_action: null,
-                              updated_at: new Date().toISOString(),
                             })
                           }
                         >
@@ -719,7 +632,7 @@ export default function GrowthPage() {
                           onClick={() => {
                             const snoozeDate = new Date()
                             snoozeDate.setDate(snoozeDate.getDate() + 3)
-                            updateProspect(p.id, {
+                            updateLead(l.id, {
                               snoozed_until: snoozeDate.toISOString().split('T')[0],
                             })
                           }}
@@ -737,21 +650,21 @@ export default function GrowthPage() {
           {/* ── Column B: New to Contact ── */}
           <div>
             <SectionTitle>New to Contact</SectionTitle>
-            {newProspects.length === 0 ? (
+            {newLeads.length === 0 ? (
               <Card style={{ padding: 40, textAlign: 'center' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>No new prospects waiting</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>No new leads waiting</span>
               </Card>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {newProspects.slice(0, showMoreNewCount).map((p) => {
-                  const score = p.bl_score
+                {newLeads.slice(0, showMoreNewCount).map((l) => {
+                  const score = l.bl_score
                   const scoreBg = score !== null && score >= 8 ? GREEN : score !== null && score >= 6 ? AMBER : 'var(--text-muted)'
 
                   return (
-                    <Card key={p.id}>
+                    <Card key={l.id}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>
-                          {p.company_name || 'Unknown'}
+                          {l.company_name || 'Unknown'}
                         </span>
                         {score !== null && (
                           <span
@@ -769,12 +682,12 @@ export default function GrowthPage() {
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                        {p.trigger_type && <Tag label={p.trigger_type} color={'var(--accent)'} />}
-                        {p.industry && (
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.industry}</span>
+                        {l.trigger_type && <Tag label={l.trigger_type} color={'var(--accent)'} />}
+                        {l.industry && (
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.industry}</span>
                         )}
                       </div>
-                      {p.bl_reason && (
+                      {l.bl_reason && (
                         <div
                           style={{
                             fontSize: 11,
@@ -786,65 +699,107 @@ export default function GrowthPage() {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {p.bl_reason}
+                          {l.bl_reason}
                         </div>
                       )}
-                      {p.postcode && (
+                      {l.postcode && (
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
-                          {p.postcode}
+                          {l.postcode}
                         </div>
                       )}
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <Btn
-                          variant="teal"
-                          small
-                          onClick={() => {
-                            const name = window.prompt(
-                              'Contact name for ' + (p.company_name || 'this company')
-                            )
-                            if (name === null) return
-                            const threeDays = new Date()
-                            threeDays.setDate(threeDays.getDate() + 3)
-                            updateProspect(p.id, {
-                              status: 'Connection Sent',
-                              contact_name: name || null,
-                              follow_up_date: threeDays.toISOString().split('T')[0],
-                              updated_at: new Date().toISOString(),
-                            })
-                          }}
-                        >
-                          Send request
-                        </Btn>
-                        <Btn
-                          variant="purple"
-                          small
-                          onClick={() =>
-                            window.open(
-                              'https://www.linkedin.com/search/results/companies/?keywords=' +
-                                encodeURIComponent(p.company_name || ''),
-                              '_blank'
-                            )
-                          }
-                        >
-                          <Linkedin size={12} /> LinkedIn
-                        </Btn>
-                        <Btn
-                          variant="danger"
-                          small
-                          onClick={() =>
-                            updateProspect(p.id, {
-                              status: 'Dead',
-                              updated_at: new Date().toISOString(),
-                            })
-                          }
-                        >
-                          Dismiss
-                        </Btn>
-                      </div>
+
+                      {/* Inline contact name input for Send request */}
+                      {sendingId === l.id ? (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+                          <input
+                            type="text"
+                            value={sendingName}
+                            onChange={(e) => setSendingName(e.target.value)}
+                            placeholder="Contact name"
+                            autoFocus
+                            style={{
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 6,
+                              color: 'var(--text-primary)',
+                              padding: '4px 8px',
+                              fontSize: 12,
+                              outline: 'none',
+                              fontFamily: 'inherit',
+                              flex: 1,
+                            }}
+                          />
+                          <Btn
+                            variant="teal"
+                            small
+                            onClick={() => {
+                              const threeDays = new Date()
+                              threeDays.setDate(threeDays.getDate() + 3)
+                              updateLead(l.id, {
+                                status: 'Contacted',
+                                contact_name: sendingName || null,
+                                follow_up_date: threeDays.toISOString().split('T')[0],
+                              })
+                              setSendingId(null)
+                              setSendingName('')
+                            }}
+                          >
+                            Save
+                          </Btn>
+                          <Btn
+                            small
+                            onClick={() => {
+                              setSendingId(null)
+                              setSendingName('')
+                            }}
+                          >
+                            Cancel
+                          </Btn>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <Btn
+                            variant="teal"
+                            small
+                            onClick={() => {
+                              setSendingId(l.id)
+                              setSendingName('')
+                            }}
+                          >
+                            Send request
+                          </Btn>
+                          <Btn
+                            variant="purple"
+                            small
+                            onClick={() =>
+                              window.open(
+                                l.linkedin_url ||
+                                  'https://www.linkedin.com/search/results/companies/?keywords=' +
+                                    encodeURIComponent(l.company_name || ''),
+                                '_blank',
+                                'noopener,noreferrer'
+                              )
+                            }
+                          >
+                            <Linkedin size={12} /> LinkedIn
+                          </Btn>
+                          <Btn
+                            variant="danger"
+                            small
+                            onClick={() =>
+                              updateLead(l.id, {
+                                status: 'Lost',
+                              })
+                            }
+                          >
+                            Dismiss
+                          </Btn>
+                        </div>
+                      )}
                     </Card>
                   )
                 })}
-                {newProspects.length > showMoreNewCount && (
+                {newLeads.length > showMoreNewCount && (
                   <Btn onClick={() => setShowMoreNewCount((c) => c + 8)}>Load more</Btn>
                 )}
               </div>
@@ -947,433 +902,6 @@ export default function GrowthPage() {
               </Card>
             )}
           </div>
-        </div>
-
-        {/* ── ZONE 3: PIPELINE ──────────────────────────────── */}
-        <SectionTitle>Pipeline</SectionTitle>
-
-        {/* Filter bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            flexWrap: 'wrap',
-            marginBottom: 16,
-          }}
-        >
-          {/* Stage filters */}
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {['All', ...PROSPECT_STAGES].map((s) => (
-              <button
-                key={s}
-                onClick={() => setStageFilter(s)}
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase' as const,
-                  padding: '4px 10px',
-                  borderRadius: 99,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  background:
-                    stageFilter === s
-                      ? (STAGE_COLORS[s as ProspectStage] || 'var(--accent)')
-                      : (STAGE_COLORS[s as ProspectStage] || 'var(--accent)') + '22',
-                  color: stageFilter === s ? 'var(--bg-primary)' : (STAGE_COLORS[s as ProspectStage] || 'var(--accent)'),
-                }}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-
-          {/* Source filters */}
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {['All', 'CompanyQuery', 'LinkedIn', 'Manual'].map((s) => (
-              <button
-                key={s}
-                onClick={() => setSourceFilter(s)}
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase' as const,
-                  padding: '4px 10px',
-                  borderRadius: 99,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  background: sourceFilter === s ? PURPLE : PURPLE + '22',
-                  color: sourceFilter === s ? 'var(--bg-primary)' : PURPLE,
-                }}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-
-          {/* Search */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '6px 10px',
-              flex: 1,
-              minWidth: 180,
-              maxWidth: 300,
-            }}
-          >
-            <Search size={14} color={'var(--text-muted)'} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search prospects..."
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontSize: 13,
-                outline: 'none',
-                width: '100%',
-                fontFamily: 'inherit',
-              }}
-            />
-          </div>
-
-          {/* Add button */}
-          <Btn variant="teal" onClick={() => setAddFormOpen(!addFormOpen)}>
-            <Plus size={14} /> Add Prospect
-          </Btn>
-        </div>
-
-        {/* Add form */}
-        {addFormOpen && (
-          <Card style={{ marginBottom: 16 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: 12,
-                marginBottom: 12,
-              }}
-            >
-              <Input
-                value={addContact}
-                onChange={setAddContact}
-                placeholder="Contact name"
-              />
-              <Input
-                value={addCompany}
-                onChange={setAddCompany}
-                placeholder="Company name"
-              />
-              <Input
-                value={addEmail}
-                onChange={setAddEmail}
-                placeholder="Email"
-              />
-              <Input
-                value={addLinkedin}
-                onChange={setAddLinkedin}
-                placeholder="LinkedIn URL"
-              />
-              <Select
-                value={addType}
-                onChange={setAddType}
-                options={[
-                  { value: 'Accountant', label: 'Accountant' },
-                  { value: 'SME', label: 'SME' },
-                ]}
-              />
-              <Select
-                value={addSource}
-                onChange={setAddSource}
-                options={[
-                  { value: 'Manual', label: 'Manual' },
-                  { value: 'LinkedIn', label: 'LinkedIn' },
-                  { value: 'CompanyQuery', label: 'CompanyQuery' },
-                  { value: 'Referral', label: 'Referral' },
-                  { value: 'Event', label: 'Event' },
-                ]}
-              />
-              <Select
-                value={addStage}
-                onChange={setAddStage}
-                options={PROSPECT_STAGES.map((s) => ({
-                  value: s,
-                  label: s,
-                }))}
-              />
-              <Input
-                value={addFollowUp}
-                onChange={setAddFollowUp}
-                placeholder="Follow up date"
-                type="date"
-              />
-              <Input
-                value={addNextAction}
-                onChange={setAddNextAction}
-                placeholder="Next action"
-              />
-              <Input
-                value={addNotes}
-                onChange={setAddNotes}
-                placeholder="Notes"
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Btn variant="teal" onClick={addProspect}>
-                Save
-              </Btn>
-              <Btn onClick={() => setAddFormOpen(false)}>Cancel</Btn>
-            </div>
-          </Card>
-        )}
-
-        {/* Prospect list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filteredProspects.length === 0 && (
-            <Card style={{ textAlign: 'center', padding: 40 }}>
-              <span style={{ color: 'var(--text-muted)' }}>No prospects match your filters</span>
-            </Card>
-          )}
-          {filteredProspects.map((p) => {
-            const stageColor = STAGE_COLORS[p.status as ProspectStage] || 'var(--text-muted)'
-            const isOverdue = p.follow_up_date && p.follow_up_date < today
-            const isUpcoming =
-              p.follow_up_date &&
-              !isOverdue &&
-              new Date(p.follow_up_date).getTime() - new Date(today).getTime() <= 3 * 86400000
-            const nextStage = NEXT_STAGE[p.status as ProspectStage]
-            const canAdvance = !!nextStage
-
-            if (editingId === p.id) {
-              return (
-                <Card key={p.id} style={{ borderLeft: `3px solid ${stageColor}` }}>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                      gap: 10,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Input
-                      value={editForm.contact_name || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, contact_name: v }))}
-                      placeholder="Contact name"
-                    />
-                    <Input
-                      value={editForm.company_name || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, company_name: v }))}
-                      placeholder="Company name"
-                    />
-                    <Input
-                      value={editForm.contact_email || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, contact_email: v }))}
-                      placeholder="Email"
-                    />
-                    <Input
-                      value={editForm.linkedin_url || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, linkedin_url: v }))}
-                      placeholder="LinkedIn URL"
-                    />
-                    <Select
-                      value={editForm.status || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, status: v }))}
-                      options={PROSPECT_STAGES.map((s) => ({
-                        value: s,
-                        label: s,
-                      }))}
-                    />
-                    <Input
-                      value={editForm.follow_up_date || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, follow_up_date: v }))}
-                      type="date"
-                    />
-                    <Input
-                      value={editForm.next_action || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, next_action: v }))}
-                      placeholder="Next action"
-                    />
-                    <Input
-                      value={editForm.notes || ''}
-                      onChange={(v) => setEditForm((f) => ({ ...f, notes: v }))}
-                      placeholder="Notes"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <Btn variant="teal" small onClick={saveEdit}>
-                      Save
-                    </Btn>
-                    <Btn
-                      small
-                      onClick={() => {
-                        setEditingId(null)
-                        setEditForm({})
-                      }}
-                    >
-                      Cancel
-                    </Btn>
-                  </div>
-                </Card>
-              )
-            }
-
-            return (
-              <Card key={p.id} style={{ borderLeft: `3px solid ${stageColor}` }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-                      {p.contact_name || p.company_name || 'Unknown'}
-                    </div>
-                    {p.contact_name &&
-                      p.company_name &&
-                      p.contact_name !== p.company_name && (
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>
-                          {p.company_name}
-                        </div>
-                      )}
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 6,
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        marginBottom: 6,
-                      }}
-                    >
-                      <Tag label={p.status} color={stageColor} />
-                      {p.source && <Tag label={p.source} color={PURPLE} />}
-                      {p.bl_score !== null && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            padding: '2px 7px',
-                            borderRadius: 99,
-                            background:
-                              (p.bl_score >= 8 ? GREEN : p.bl_score >= 6 ? AMBER : 'var(--text-muted)') + '22',
-                            color: p.bl_score >= 8 ? GREEN : p.bl_score >= 6 ? AMBER : 'var(--text-muted)',
-                          }}
-                        >
-                          {p.bl_score}
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 12,
-                        alignItems: 'center',
-                        fontSize: 12,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      {p.follow_up_date && (
-                        <span
-                          style={{
-                            color: isOverdue ? RED : isUpcoming ? AMBER : 'var(--text-muted)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}
-                        >
-                          <Clock size={11} />
-                          {formatDate(p.follow_up_date)}
-                        </span>
-                      )}
-                      {p.next_action && (
-                        <span style={{ color: 'var(--text-muted)' }}>{p.next_action}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 6,
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <select
-                      value={p.status}
-                      onChange={(e) => updateProspect(p.id, { status: e.target.value })}
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 6,
-                        color: stageColor,
-                        padding: '4px 8px',
-                        fontSize: 11,
-                        fontFamily: 'inherit',
-                        cursor: 'pointer',
-                        outline: 'none',
-                      }}
-                    >
-                      {PROSPECT_STAGES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-
-                    {canAdvance && (
-                      <Btn
-                        variant="teal"
-                        small
-                        onClick={() =>
-                          updateProspect(p.id, {
-                            status: nextStage,
-                          })
-                        }
-                      >
-                        Next stage <ChevronRight size={12} />
-                      </Btn>
-                    )}
-
-                    <Btn
-                      variant="purple"
-                      small
-                      onClick={() =>
-                        window.open(
-                          p.linkedin_url ||
-                            'https://www.linkedin.com/search/results/people/?keywords=' +
-                              encodeURIComponent(
-                                p.contact_name || p.company_name || ''
-                              ),
-                          '_blank'
-                        )
-                      }
-                    >
-                      <Linkedin size={12} />
-                    </Btn>
-
-                    <Btn small onClick={() => startEdit(p)}>
-                      <Edit2 size={12} />
-                    </Btn>
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
         </div>
 
         {/* ── ZONE 4: ACQUISITION CHANNELS ─────────────────── */}
