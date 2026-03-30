@@ -4,19 +4,43 @@ import { useLocalStorage } from '@/lib/useLocalStorage'
 import { DEFAULT_CONTENT } from '@/lib/defaults'
 import { ContentItem, ContentStatus } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
+import { LEAD_STAGES, LEAD_STAGE_COLORS, LEAD_SOURCES, SOURCE_COLORS, type LeadStage } from '@/lib/tokens'
+import LeadPanel from '@/components/LeadPanel'
+import type { Lead } from '@/components/LeadPanel'
 
 // ── Types ────────────────────────────────────────────────────────
 interface DbLead {
   id: string
   name: string | null
   company_name: string | null
+  contact_name: string | null
+  email: string | null
+  phone_number: string | null
   status: string
-  business_type: string | null
-  notes: string | null
   source: string | null
+  business_type: string | null
+  linkedin_url: string | null
+  next_action: string | null
+  follow_up_date: string | null
+  snoozed_until: string | null
+  notes: string | null
+  bl_score: number | null
+  bl_priority: string | null
+  bl_reason: string | null
+  monthly_value: number | null
+  company_number: string | null
+  industry: string | null
+  postcode: string | null
+  region: string | null
+  website: string | null
+  current_accountant: string | null
+  current_software: string | null
+  pain_points: string | null
+  annual_turnover: string | null
   revenue: number | null
-  annual_turnover: number | null
+  annual_turnover_num: number | null
   created_at: string
+  updated_at: string | null
 }
 
 interface DbRoadmap {
@@ -36,32 +60,6 @@ interface DbRevenue {
   consulting_target: number
   saas_target: number
   updated_at: string
-}
-
-// ── Lead pipeline stages (canonical order) ───────────────────────
-const LEAD_STAGES = ['Discovery', 'Proposal', 'Negotiation', 'Signed', 'Lost'] as const
-type LeadStage = typeof LEAD_STAGES[number]
-
-const LEAD_STAGE_COLORS: Record<LeadStage, string> = {
-  Discovery: '#7C8CF8',
-  Proposal: '#F59E0B',
-  Negotiation: '#F97316',
-  Signed: '#34D399',
-  Lost: '#F87171',
-}
-
-const LEAD_SOURCES = ['CompanyQuery', 'LinkedIn', 'Referral', 'Inbound', 'Event', 'Manual'] as const
-type LeadSource = typeof LEAD_SOURCES[number]
-
-const SOURCE_COLORS: Record<string, string> = {
-  CompanyQuery: '#53E9C5',
-  LinkedIn: '#7C8CF8',
-  Referral: '#F59E0B',
-  Inbound: '#34D399',
-  Event: '#F97316',
-  Manual: '#8892A4',
-  'Companies House Search': '#53E9C5',
-  'ai_onboarding': '#A78BFA',
 }
 
 // ── Shared styles ────────────────────────────────────────────────
@@ -157,49 +155,46 @@ function KpiBar({ leads, milestones, content, consultingTarget }: { leads: DbLea
   )
 }
 
-// ── KANBAN PIPELINE (drag & drop + full CRUD) ────────────────────
-function Pipeline({ leads, onUpdate, onAdd, onEdit, onDelete }: {
+// ── PIPELINE (kanban + list + LeadPanel) ─────────────────────────
+function Pipeline({ leads, onUpdate, onAdd, onDelete }: {
   leads: DbLead[]
-  onUpdate: (id: string, updates: Partial<DbLead>) => void
-  onAdd: (lead: { company_name: string; business_type: string; status: string; notes: string; source: string }) => void
-  onEdit: (id: string, updates: Partial<DbLead>) => void
-  onDelete: (id: string) => void
+  onUpdate: (id: string, updates: Partial<DbLead>) => Promise<void>
+  onAdd: (lead: Partial<DbLead>) => Promise<void>
+  onDelete: (id: string) => Promise<void>
 }) {
   const [addOpen, setAddOpen] = useState(false)
-  const [addForm, setAddForm] = useState({ name: '', type: 'SME', stage: 'Discovery' as string, note: '', source: 'Manual' as string })
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<{ company_name: string; business_type: string; notes: string; source: string; revenue: string }>({ company_name: '', business_type: '', notes: '', source: '', revenue: '' })
+  const [addForm, setAddForm] = useState({
+    name: '', company_name: '', email: '', phone_number: '', business_type: 'SME',
+    source: 'Manual', status: 'New', monthly_value: '', linkedin_url: '',
+    next_action: '', follow_up_date: '', notes: '',
+  })
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
 
   function handleAdd() {
-    if (!addForm.name.trim()) return
-    onAdd({ company_name: addForm.name, business_type: addForm.type, status: addForm.stage, notes: addForm.note, source: addForm.source })
-    setAddForm({ name: '', type: 'SME', stage: 'Discovery', note: '', source: 'Manual' })
+    if (!addForm.name.trim() && !addForm.company_name.trim()) return
+    onAdd({
+      name: addForm.name || null,
+      company_name: addForm.company_name || null,
+      email: addForm.email || null,
+      phone_number: addForm.phone_number || null,
+      business_type: addForm.business_type || null,
+      source: addForm.source || null,
+      status: addForm.status,
+      monthly_value: addForm.monthly_value ? Number(addForm.monthly_value) : null,
+      linkedin_url: addForm.linkedin_url || null,
+      next_action: addForm.next_action || null,
+      follow_up_date: addForm.follow_up_date || null,
+      notes: addForm.notes || null,
+    })
+    setAddForm({
+      name: '', company_name: '', email: '', phone_number: '', business_type: 'SME',
+      source: 'Manual', status: 'New', monthly_value: '', linkedin_url: '',
+      next_action: '', follow_up_date: '', notes: '',
+    })
     setAddOpen(false)
-  }
-
-  function startEdit(lead: DbLead) {
-    setEditingId(lead.id)
-    setEditForm({
-      company_name: lead.company_name || '',
-      business_type: lead.business_type || 'SME',
-      notes: lead.notes || '',
-      source: lead.source || 'Manual',
-      revenue: lead.revenue ? String(lead.revenue) : '',
-    })
-  }
-
-  function saveEdit() {
-    if (!editingId) return
-    onEdit(editingId, {
-      company_name: editForm.company_name,
-      business_type: editForm.business_type,
-      notes: editForm.notes,
-      source: editForm.source,
-      revenue: Number(editForm.revenue) || null,
-    })
-    setEditingId(null)
   }
 
   // ── Drag handlers ──
@@ -219,17 +214,17 @@ function Pipeline({ leads, onUpdate, onAdd, onEdit, onDelete }: {
     }
   }
 
-  function onDragOver(e: React.DragEvent, stage: string) {
+  function handleDragOver(e: React.DragEvent, stage: string) {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     setDragOverStage(stage)
   }
 
-  function onDragLeave() {
+  function handleDragLeave() {
     setDragOverStage(null)
   }
 
-  function onDrop(e: React.DragEvent, stage: string) {
+  function handleDrop(e: React.DragEvent, stage: string) {
     e.preventDefault()
     setDragOverStage(null)
     if (dragId) {
@@ -243,24 +238,96 @@ function Pipeline({ leads, onUpdate, onAdd, onEdit, onDelete }: {
 
   const stageColor = (stage: string) => LEAD_STAGE_COLORS[stage as LeadStage] || 'var(--text-muted)'
 
+  const stageSet = new Set(LEAD_STAGES as readonly string[])
+  const unmapped = leads.filter(l => !stageSet.has(l.status))
+  const selectedLead = selectedLeadId ? leads.find(l => l.id === selectedLeadId) || null : null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   return (
     <section style={{ gridColumn: '1 / -1' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Sales Pipeline</h2>
-        <button onClick={() => setAddOpen(!addOpen)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span> Add Lead
-        </button>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Sales Pipeline</h2>
+          <div style={{ display: 'flex', gap: 16, marginTop: 6, fontSize: 12, color: 'var(--text-muted)' }}>
+            <span>{leads.length} leads</span>
+            <span>{leads.filter(l => new Date(l.created_at) > new Date(Date.now() - 30 * 86400000)).length} this month</span>
+            <span>{leads.length > 0 ? Math.round(leads.filter(l => l.status === 'Signed').length / Math.max(leads.filter(l => l.status !== 'Lost').length, 1) * 100) : 0}% conversion</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {/* View toggle */}
+          <button
+            onClick={() => setViewMode('kanban')}
+            style={{
+              background: viewMode === 'kanban' ? 'var(--accent)' : 'var(--bg-primary)',
+              color: viewMode === 'kanban' ? 'var(--bg-primary)' : 'var(--text-muted)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Board
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            style={{
+              background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-primary)',
+              color: viewMode === 'list' ? 'var(--bg-primary)' : 'var(--text-muted)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            List
+          </button>
+          {/* Add lead button */}
+          <button
+            onClick={() => setAddOpen(!addOpen)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 500,
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span> Add Lead
+          </button>
+        </div>
       </div>
 
       {/* Add lead form */}
       {addOpen && (
-        <div style={{ ...cardStyle, marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-          <Input placeholder="Company name" value={addForm.name} onChange={v => setAddForm({ ...addForm, name: v })} />
-          <Select value={addForm.type} onChange={v => setAddForm({ ...addForm, type: v })} options={['Accountant', 'SME']} />
-          <Select value={addForm.stage} onChange={v => setAddForm({ ...addForm, stage: v })} options={[...LEAD_STAGES]} />
+        <div style={{ ...cardStyle, marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          <Input placeholder="Name" value={addForm.name} onChange={v => setAddForm({ ...addForm, name: v })} />
+          <Input placeholder="Company" value={addForm.company_name} onChange={v => setAddForm({ ...addForm, company_name: v })} />
+          <Input placeholder="Email" value={addForm.email} onChange={v => setAddForm({ ...addForm, email: v })} />
+          <Input placeholder="Phone" value={addForm.phone_number} onChange={v => setAddForm({ ...addForm, phone_number: v })} />
+          <Select value={addForm.business_type} onChange={v => setAddForm({ ...addForm, business_type: v })} options={['Accountant', 'SME', 'Startup', 'Enterprise']} />
           <Select value={addForm.source} onChange={v => setAddForm({ ...addForm, source: v })} options={[...LEAD_SOURCES]} />
+          <Select value={addForm.status} onChange={v => setAddForm({ ...addForm, status: v })} options={[...LEAD_STAGES]} />
+          <Input placeholder="Monthly value (£)" type="number" value={addForm.monthly_value} onChange={v => setAddForm({ ...addForm, monthly_value: v })} />
+          <Input placeholder="LinkedIn URL" value={addForm.linkedin_url} onChange={v => setAddForm({ ...addForm, linkedin_url: v })} />
+          <Input placeholder="Next action" value={addForm.next_action} onChange={v => setAddForm({ ...addForm, next_action: v })} />
+          <Input placeholder="Follow-up date" type="date" value={addForm.follow_up_date} onChange={v => setAddForm({ ...addForm, follow_up_date: v })} />
           <div style={{ gridColumn: '1 / -1' }}>
-            <Input placeholder="Notes (optional)" value={addForm.note} onChange={v => setAddForm({ ...addForm, note: v })} />
+            <Input placeholder="Notes (optional)" value={addForm.notes} onChange={v => setAddForm({ ...addForm, notes: v })} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Btn variant="primary" onClick={handleAdd}>Save</Btn>
@@ -269,175 +336,245 @@ function Pipeline({ leads, onUpdate, onAdd, onEdit, onDelete }: {
         </div>
       )}
 
-      {/* Kanban board */}
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 16 }} className="custom-scrollbar">
-        {LEAD_STAGES.map(stage => {
-          const stageLeads = leads.filter(l => l.status === stage)
-          const isOver = dragOverStage === stage
-          const color = stageColor(stage)
+      {/* ── Kanban view ───────────────────────────────────────────── */}
+      {viewMode === 'kanban' && (
+        <>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 16 }} className="custom-scrollbar">
+            {LEAD_STAGES.map(stage => {
+              const stageLeads = leads.filter(l => l.status === stage)
+              const isOver = dragOverStage === stage
+              const color = stageColor(stage)
+              const isDimStage = stage === 'New' || stage === 'Lost'
 
-          return (
-            <div
-              key={stage}
-              onDragOver={e => onDragOver(e, stage)}
-              onDragLeave={onDragLeave}
-              onDrop={e => onDrop(e, stage)}
-              style={{
-                flexShrink: 0,
-                width: 260,
-                minHeight: 200,
-                background: isOver ? color + '11' : 'transparent',
-                borderRadius: 12,
-                transition: 'background 0.15s',
-                border: isOver ? `2px dashed ${color}44` : '2px dashed transparent',
-              }}
-            >
-              {/* Column header */}
-              <div style={{ background: 'var(--bg-mid)', padding: '10px 14px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `3px solid ${color}` }}>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color }}>{stage}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: color + '22', color }}>{stageLeads.length}</span>
-              </div>
-
-              {/* Cards */}
-              <div style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 100 }}>
-                {stageLeads.map(lead => {
-                  const isEditing = editingId === lead.id
-                  const isDragging = dragId === lead.id
-
-                  if (isEditing) {
-                    return (
-                      <div key={lead.id} style={{ ...cardStyle, padding: 12, borderLeft: `4px solid ${color}` }}>
-                        <Input small placeholder="Company name" value={editForm.company_name} onChange={v => setEditForm({ ...editForm, company_name: v })} />
-                        <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                          <Select value={editForm.business_type} onChange={v => setEditForm({ ...editForm, business_type: v })} options={['Accountant', 'SME']} />
-                          <Select value={editForm.source} onChange={v => setEditForm({ ...editForm, source: v })} options={[...LEAD_SOURCES, 'Companies House Search', 'ai_onboarding']} />
-                        </div>
-                        <div style={{ marginTop: 8 }}>
-                          <Input small placeholder="Revenue (£/mo)" type="number" value={editForm.revenue} onChange={v => setEditForm({ ...editForm, revenue: v })} />
-                        </div>
-                        <div style={{ marginTop: 8 }}>
-                          <Input small placeholder="Notes" value={editForm.notes} onChange={v => setEditForm({ ...editForm, notes: v })} />
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                          <Btn small variant="primary" onClick={saveEdit}>Save</Btn>
-                          <Btn small onClick={() => setEditingId(null)}>Cancel</Btn>
-                          <Btn small variant="danger" onClick={() => { onDelete(lead.id); setEditingId(null) }}>Delete</Btn>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  return (
-                    <div
-                      key={lead.id}
-                      draggable
-                      onDragStart={e => onDragStart(e, lead.id)}
-                      onDragEnd={onDragEnd}
-                      style={{
-                        ...cardStyle,
-                        padding: 14,
-                        borderLeft: `4px solid ${color}`,
-                        cursor: isDragging ? 'grabbing' : 'grab',
-                        opacity: isDragging ? 0.4 : 1,
-                        userSelect: 'none',
-                      }}
-                    >
-                      {/* Name + edit button */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3, flex: 1 }}>
-                          {lead.company_name || lead.name || 'Unnamed'}
-                        </p>
-                        <button
-                          onClick={() => startEdit(lead)}
-                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2, flexShrink: 0 }}
-                          title="Edit lead"
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
-                        </button>
-                      </div>
-
-                      {/* Source + type tags */}
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
-                        <SourceTag source={lead.source} />
-                        {lead.business_type && (
-                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-mid)', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                            {lead.business_type}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Revenue if set */}
-                      {(lead.revenue || 0) > 0 && (
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginBottom: 6 }}>
-                          £{(lead.revenue || 0).toLocaleString()}/mo
-                        </div>
-                      )}
-
-                      {/* Notes */}
-                      {lead.notes && (
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: 4 }}>{lead.notes}</p>
-                      )}
-
-                      {/* Date */}
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)', opacity: 0.7 }}>
-                        {new Date(lead.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </div>
-                    </div>
-                  )
-                })}
-
-                {/* Empty state per column */}
-                {stageLeads.length === 0 && (
-                  <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11, opacity: 0.5 }}>
-                    Drop leads here
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Leads outside canonical stages */}
-      {(() => {
-        const stageSet = new Set(LEAD_STAGES as readonly string[])
-        const unmapped = leads.filter(l => !stageSet.has(l.status))
-        if (unmapped.length === 0) return null
-        return (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Unmapped ({unmapped.length}) — drag to a stage above to categorise
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {unmapped.map(lead => (
+              return (
                 <div
-                  key={lead.id}
-                  draggable
-                  onDragStart={e => onDragStart(e, lead.id)}
-                  onDragEnd={onDragEnd}
+                  key={stage}
+                  onDragOver={e => handleDragOver(e, stage)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={e => handleDrop(e, stage)}
                   style={{
-                    ...cardStyle,
-                    padding: '8px 14px',
-                    cursor: 'grab',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    borderLeft: '4px solid var(--text-muted)',
-                    opacity: dragId === lead.id ? 0.4 : 1,
+                    flexShrink: 0,
+                    width: 260,
+                    minHeight: 200,
+                    background: isOver ? color + '11' : isDimStage ? 'var(--bg-primary)' : 'transparent',
+                    borderRadius: 12,
+                    transition: 'background 0.15s',
+                    border: isOver ? `2px dashed ${color}44` : '2px dashed transparent',
+                    opacity: isDimStage ? 0.85 : 1,
                   }}
                 >
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.company_name || lead.name || 'Unnamed'}</span>
-                  <SourceTag source={lead.source} />
-                  <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-mid)', color: 'var(--text-muted)' }}>{lead.status}</span>
-                  <button onClick={() => startEdit(lead)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
-                  </button>
+                  {/* Column header */}
+                  <div style={{ background: 'var(--bg-mid)', padding: '10px 14px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `3px solid ${color}` }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color }}>{stage}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: color + '22', color }}>{stageLeads.length}</span>
+                  </div>
+
+                  {/* Cards */}
+                  <div style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 100 }}>
+                    {stageLeads.map(lead => {
+                      const isDragging = dragId === lead.id
+                      const isOverdue = lead.follow_up_date && new Date(lead.follow_up_date) < today
+
+                      return (
+                        <div
+                          key={lead.id}
+                          draggable
+                          onDragStart={e => onDragStart(e, lead.id)}
+                          onDragEnd={onDragEnd}
+                          onClick={() => setSelectedLeadId(lead.id)}
+                          style={{
+                            ...cardStyle,
+                            padding: 14,
+                            borderLeft: `4px solid ${color}`,
+                            cursor: isDragging ? 'grabbing' : 'grab',
+                            opacity: isDragging ? 0.4 : 1,
+                            userSelect: 'none',
+                          }}
+                        >
+                          {/* Name row */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3, flex: 1 }}>
+                              {lead.company_name || lead.name || 'Unnamed'}
+                            </p>
+                            {isOverdue && (
+                              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#F87171', flexShrink: 0, marginTop: 4, marginLeft: 6 }} title="Follow-up overdue" />
+                            )}
+                          </div>
+
+                          {/* Source + type + score tags */}
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+                            <SourceTag source={lead.source} />
+                            {lead.business_type && (
+                              <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-mid)', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                {lead.business_type}
+                              </span>
+                            )}
+                            {lead.bl_score != null && (
+                              <span style={{
+                                fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                                background: lead.bl_score >= 8 ? '#34D39922' : lead.bl_score >= 6 ? '#F59E0B22' : 'var(--bg-mid)',
+                                color: lead.bl_score >= 8 ? '#34D399' : lead.bl_score >= 6 ? '#F59E0B' : 'var(--text-muted)',
+                              }}>
+                                {lead.bl_score}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Revenue if set */}
+                          {(lead.revenue || 0) > 0 && (
+                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginBottom: 6 }}>
+                              £{(lead.revenue || 0).toLocaleString()}/mo
+                            </div>
+                          )}
+
+                          {/* Date */}
+                          <div style={{ fontSize: 10, color: 'var(--text-muted)', opacity: 0.7 }}>
+                            {new Date(lead.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {/* Empty state per column */}
+                    {stageLeads.length === 0 && (
+                      <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11, opacity: 0.5 }}>
+                        Drop leads here
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
-        )
-      })()}
+
+          {/* Unmapped leads */}
+          {unmapped.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Unmapped ({unmapped.length}) — drag to a stage above to categorise
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {unmapped.map(lead => (
+                  <div
+                    key={lead.id}
+                    draggable
+                    onDragStart={e => onDragStart(e, lead.id)}
+                    onDragEnd={onDragEnd}
+                    onClick={() => setSelectedLeadId(lead.id)}
+                    style={{
+                      ...cardStyle,
+                      padding: '8px 14px',
+                      cursor: 'grab',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      borderLeft: '4px solid var(--text-muted)',
+                      opacity: dragId === lead.id ? 0.4 : 1,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.company_name || lead.name || 'Unnamed'}</span>
+                    <SourceTag source={lead.source} />
+                    <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-mid)', color: 'var(--text-muted)' }}>{lead.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── List view ─────────────────────────────────────────────── */}
+      {viewMode === 'list' && (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                {['Name / Company', 'Status', 'Source', 'Score', 'Follow-up', 'Next Action', 'Actions'].map(h => (
+                  <th key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', padding: 12, color: 'var(--text-muted)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {leads.length === 0 && (
+                <tr><td colSpan={7} style={{ padding: 20, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>No leads yet.</td></tr>
+              )}
+              {leads.map(lead => {
+                const sc = stageColor(lead.status)
+                const isOverdue = lead.follow_up_date && new Date(lead.follow_up_date) < today
+                return (
+                  <tr key={lead.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: 12 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.company_name || lead.name || 'Unnamed'}</span>
+                      {lead.company_name && lead.name && (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>{lead.name}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: sc + '22', color: sc, textTransform: 'uppercase' }}>{lead.status}</span>
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      <SourceTag source={lead.source} />
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      {lead.bl_score != null ? (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                          background: lead.bl_score >= 8 ? '#34D39922' : lead.bl_score >= 6 ? '#F59E0B22' : 'var(--bg-mid)',
+                          color: lead.bl_score >= 8 ? '#34D399' : lead.bl_score >= 6 ? '#F59E0B' : 'var(--text-muted)',
+                        }}>
+                          {lead.bl_score}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      {lead.follow_up_date ? (
+                        <span style={{ fontSize: 11, color: isOverdue ? '#F87171' : 'var(--text-muted)', fontWeight: isOverdue ? 700 : 400 }}>
+                          {new Date(lead.follow_up_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 12, color: 'var(--text-primary)' }}>
+                      {lead.next_action || '—'}
+                    </td>
+                    <td style={{ padding: 12, textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => setSelectedLeadId(lead.id)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+                          title="Edit lead"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
+                        </button>
+                        <button
+                          onClick={() => onDelete(lead.id)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+                          title="Delete lead"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ── LeadPanel slide-over ──────────────────────────────────── */}
+      {selectedLead && (
+        <LeadPanel
+          lead={selectedLead as Lead}
+          onUpdate={async (id, updates) => { await onUpdate(id, updates) }}
+          onDelete={async (id) => { await onDelete(id); setSelectedLeadId(null) }}
+          onClose={() => setSelectedLeadId(null)}
+        />
+      )}
     </section>
   )
 }
@@ -634,7 +771,7 @@ export default function Dashboard() {
     setError(null)
     try {
       const [leadsRes, revenueRes, roadmapRes] = await Promise.all([
-        supabase.from('leads').select('id,name,company_name,status,business_type,notes,source,revenue,annual_turnover,created_at').order('created_at', { ascending: false }),
+        supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase.from('bl_revenue_targets').select('*').limit(1).single(),
         supabase.from('roadmap').select('*').not('week', 'is', null).order('week').order('sort_order'),
       ])
@@ -663,7 +800,7 @@ export default function Dashboard() {
     } catch { loadData() }
   }
 
-  const addLead = async (lead: { company_name: string; business_type: string; status: string; notes: string; source: string }) => {
+  const addLead = async (lead: Partial<DbLead>) => {
     try {
       const { data, error } = await supabase.from('leads').insert(lead).select().single()
       if (error) throw error
@@ -720,7 +857,7 @@ export default function Dashboard() {
     <div style={{ maxWidth: 1440, margin: '0 auto', padding: '32px 24px 80px' }}>
       <KpiBar leads={leads} milestones={milestones} content={content} consultingTarget={revenue.consulting_target} />
 
-      <Pipeline leads={leads} onUpdate={updateLead} onAdd={addLead} onEdit={updateLead} onDelete={deleteLead} />
+      <Pipeline leads={leads} onUpdate={updateLead} onAdd={addLead} onDelete={deleteLead} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginTop: 32 }}>
         <RevenueTracker leads={leads} revenue={revenue} onUpdateTarget={updateRevenueTarget} />
