@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, type NewsSource, type IncomingArticle } from '@/lib/supabase'
-import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, X, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
 
 const AMBER = '#F59E0B'
 const GREEN = '#34D399'
@@ -155,10 +155,18 @@ function SourcesTab() {
 }
 
 // ── QUEUE TAB ─────────────────────────────────────────────────
-function QueueTab({ onApprove }: { onApprove: (article: IncomingArticle) => void }) {
+function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: IncomingArticle) => void; onSaveAndGenerate: (article: IncomingArticle) => void }) {
   const [articles, setArticles] = useState<IncomingArticle[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('Fetched')
+  const [showManualForm, setShowManualForm] = useState(false)
+  const [manualUrl, setManualUrl] = useState('')
+  const [manualTitle, setManualTitle] = useState('')
+  const [manualSummary, setManualSummary] = useState('')
+  const [manualProfile, setManualProfile] = useState<'femi' | 'bl_accountant' | 'bl_sme'>('femi')
+  const [saving, setSaving] = useState(false)
+  const [savingAndGenerating, setSavingAndGenerating] = useState(false)
+  const [manualError, setManualError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -174,7 +182,58 @@ function QueueTab({ onApprove }: { onApprove: (article: IncomingArticle) => void
     setArticles(a => a.filter(x => x.id !== id))
   }
 
+  function resetManualForm() {
+    setManualUrl(''); setManualTitle(''); setManualSummary(''); setManualProfile('femi'); setManualError('')
+  }
+
+  function extractDomain(url: string): string | null {
+    try { return new URL(url).hostname.replace('www.', '') } catch { return null }
+  }
+
+  async function insertManualArticle(): Promise<IncomingArticle | null> {
+    if (!manualTitle.trim()) { setManualError('Article title is required'); return null }
+    setManualError('')
+    const now = new Date().toISOString()
+    const url = manualUrl.trim() || `manual://${Date.now()}`
+    const { data, error } = await supabase.from('bb_incoming_articles').insert({
+      original_title: manualTitle.trim(),
+      original_url: url,
+      original_excerpt: manualSummary.trim() || null,
+      ai_summary: manualSummary.trim() || null,
+      fetched_at: now,
+      status: 'Fetched',
+      profile_target: manualProfile,
+      source_id: null,
+      created_at: now,
+    }).select().single()
+    if (error || !data) { setManualError(error?.message || 'Failed to save article'); return null }
+    return data as IncomingArticle
+  }
+
+  async function handleSaveToQueue() {
+    setSaving(true)
+    const article = await insertManualArticle()
+    if (article) {
+      resetManualForm()
+      setShowManualForm(false)
+      await load()
+    }
+    setSaving(false)
+  }
+
+  async function handleSaveAndGenerate() {
+    setSavingAndGenerating(true)
+    const article = await insertManualArticle()
+    if (article) {
+      resetManualForm()
+      setShowManualForm(false)
+      onSaveAndGenerate(article)
+    }
+    setSavingAndGenerating(false)
+  }
+
   const statusOptions = ['Fetched', 'AI_Drafted', 'Ready_for_Review', 'Approved', 'Published', 'Rejected']
+  const domainHint = manualUrl.trim() ? extractDomain(manualUrl.trim()) : null
 
   return (
     <div>
@@ -188,8 +247,70 @@ function QueueTab({ onApprove }: { onApprove: (article: IncomingArticle) => void
             {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <Btn variant="ghost" onClick={load} small><RefreshCw size={12} /> Refresh</Btn>
+          <Btn variant="teal" onClick={() => setShowManualForm(v => !v)} small><Plus size={12} /> Add story manually</Btn>
         </div>
       </div>
+
+      {showManualForm && (
+        <div style={{ marginBottom: 20 }}>
+          <Card accent="var(--accent)">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)' }}>Add story manually</label>
+              <button onClick={() => { setShowManualForm(false); resetManualForm() }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}><X size={16} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* URL field */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1 }}><Input value={manualUrl} onChange={setManualUrl} placeholder="Paste article URL (optional)" /></div>
+                  {manualUrl.trim() && extractDomain(manualUrl.trim()) && (
+                    <a href={manualUrl.trim()} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', display: 'flex', flexShrink: 0 }}><ExternalLink size={14} /></a>
+                  )}
+                </div>
+              </div>
+
+              {/* Title field */}
+              <div>
+                <Input value={manualTitle} onChange={setManualTitle} placeholder="Article headline or topic *" />
+                {domainHint && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Source: {domainHint}</p>}
+              </div>
+
+              {/* Summary field */}
+              <div>
+                <textarea value={manualSummary} onChange={e => setManualSummary(e.target.value)} placeholder="Brief summary or context — helps Claude write a better draft" rows={3} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+              </div>
+
+              {/* Profile selector */}
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Profile</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(Object.entries(PROFILE_LABELS) as [string, { label: string; color: string; desc: string }][]).map(([key, p]) => (
+                    <button key={key} onClick={() => setManualProfile(key as typeof manualProfile)} style={{
+                      background: manualProfile === key ? p.color + '15' : 'var(--bg-card)',
+                      border: `1.5px solid ${manualProfile === key ? p.color : 'var(--border)'}`,
+                      borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontFamily: 'inherit',
+                      fontSize: 12, fontWeight: 600, color: manualProfile === key ? p.color : 'var(--text-muted)',
+                    }}>{p.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {manualError && <div style={{ padding: '8px 12px', background: RED_BG, border: `1px solid ${RED}33`, borderRadius: 8, fontSize: 12, color: RED }}>{manualError}</div>}
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <Btn variant="ghost" onClick={handleSaveToQueue} disabled={saving || savingAndGenerating}>
+                  {saving ? 'Saving...' : 'Save to queue'}
+                </Btn>
+                <Btn variant="teal" onClick={handleSaveAndGenerate} disabled={saving || savingAndGenerating}>
+                  <Zap size={12} />{savingAndGenerating ? 'Saving...' : 'Save and generate draft'}
+                </Btn>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading queue...</p>
@@ -550,6 +671,11 @@ export default function ContentPage() {
     setTab('studio')
   }
 
+  function handleSaveAndGenerate(article: IncomingArticle) {
+    setStudioArticle(article)
+    setTab('studio')
+  }
+
   function handleScheduled() {
     setTab('scheduled')
     setStudioArticle(null)
@@ -583,7 +709,7 @@ export default function ContentPage() {
 
       {/* Tab content */}
       <div>
-        {tab === 'queue'     && <QueueTab onApprove={handleApprove} />}
+        {tab === 'queue'     && <QueueTab onApprove={handleApprove} onSaveAndGenerate={handleSaveAndGenerate} />}
         {tab === 'studio'    && <StudioTab article={studioArticle} onScheduled={handleScheduled} />}
         {tab === 'scheduled' && <ScheduledTab />}
         {tab === 'sources'   && <SourcesTab />}
