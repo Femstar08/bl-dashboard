@@ -402,7 +402,9 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
           regenerate,
         })
       })
-      const data = await res.json()
+      const text = await res.text()
+      if (!text) throw new Error('Empty response from image webhook')
+      const data = JSON.parse(text)
       if (data.image_url) {
         setImageUrl(data.image_url)
         setImagePrompt(data.image_prompt || '')
@@ -437,7 +439,9 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
           previous_post: previousPost || null,
         })
       })
-      const data = await res.json()
+      const text = await res.text()
+      if (!text) throw new Error('Empty response from draft webhook')
+      const data = JSON.parse(text)
       if (data.draft) setDraft(data.draft)
       else setError('Draft generation failed — check n8n workflow')
     } catch (e: unknown) {
