@@ -406,9 +406,22 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
       const text = await res.text()
       if (!text) throw new Error('Image webhook returned empty response — check n8n workflow is active')
       const data = JSON.parse(text)
-      if (data.image_url) {
+      if (data.image_url && data.image_url.length > 200) {
         setImageUrl(data.image_url)
         setImagePrompt(data.image_prompt || '')
+      } else if (data.success) {
+        // Image was saved to Supabase but response may have been truncated — fetch from DB
+        const { data: row } = await supabase
+          .from('bb_incoming_articles')
+          .select('generated_image_url')
+          .eq('id', article.id)
+          .single()
+        if (row?.generated_image_url) {
+          setImageUrl(row.generated_image_url)
+          setImagePrompt(data.image_prompt || '')
+        } else {
+          setError('Image generated but could not be loaded')
+        }
       } else {
         setError('Image generation failed — check n8n workflow')
       }
