@@ -364,6 +364,7 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
 // ── STUDIO TAB ────────────────────────────────────────────────
 function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; onScheduled: () => void }) {
   const [profile, setProfile] = useState<'femi'|'bl_accountant'|'bl_sme'>('femi')
+  const [framework, setFramework] = useState<'auto'|'slay'|'pas'>('auto')
   const [previousPost, setPreviousPost] = useState('')
   const [draft, setDraft] = useState(article?.ai_rewrite || '')
   const [generating, setGenerating] = useState(false)
@@ -376,6 +377,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
   const [imagePrompt, setImagePrompt] = useState('')
   const [imageLoading, setImageLoading] = useState(false)
   const [imageCopied, setImageCopied] = useState(false)
+  const [draftCopied, setDraftCopied] = useState(false)
 
   useEffect(() => {
     if (article?.ai_rewrite) setDraft(article.ai_rewrite)
@@ -437,7 +439,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
     setTimeout(() => setImageCopied(false), 2000)
   }
 
-  async function generate() {
+  async function generate(differentAngle = false) {
     if (!article) return
     setGenerating(true)
     setError('')
@@ -451,6 +453,8 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
           article_id: article.id,
           profile_target: profile,
           previous_post: previousPost || null,
+          framework,
+          different_angle: differentAngle,
         })
       })
       if (!res.ok) throw new Error(`Webhook returned ${res.status}`)
@@ -517,6 +521,27 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
           </div>
 
           <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Post framework</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {([
+                { value: 'auto' as const, label: 'Auto-detect' },
+                { value: 'slay' as const, label: 'SLAY' },
+                { value: 'pas' as const, label: 'PAS' },
+              ]).map(fw => (
+                <button key={fw.value} onClick={() => setFramework(fw.value)} style={{
+                  flex: 1, padding: '8px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  border: `1.5px solid ${framework === fw.value ? 'var(--accent)' : 'var(--border)'}`,
+                  background: framework === fw.value ? 'var(--accent)' + '15' : 'var(--bg-card)',
+                  color: framework === fw.value ? 'var(--accent)' : 'var(--text-muted)',
+                }}>{fw.label}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
+              {framework === 'slay' ? 'Story \u2192 Lesson \u2192 Actionable \u2192 You' : framework === 'pas' ? 'Problem \u2192 Agitate \u2192 Solution' : 'Claude picks the best framework for the content'}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Previous post context (optional)</label>
             <textarea value={previousPost} onChange={e => setPreviousPost(e.target.value)} placeholder="Paste your most recent post here. Claude will write this as a natural follow-up..." rows={4} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
           </div>
@@ -534,6 +559,16 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
                 <span style={{ fontSize: 11, color: charCount > 3000 ? RED : charCount > 2500 ? AMBER : 'var(--text-muted)' }}>{charCount} chars {charCount > 3000 ? '(too long)' : ''}</span>
               </div>
               <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={16} placeholder={generating ? 'Generating...' : 'Draft will appear here...'} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '12px', fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.7 }} />
+              {draft && !generating && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <Btn variant="ghost" onClick={() => { navigator.clipboard.writeText(draft); setDraftCopied(true); setTimeout(() => setDraftCopied(false), 2000) }} small>
+                    <Copy size={12} /> {draftCopied ? 'Copied!' : 'Copy to clipboard'}
+                  </Btn>
+                  <Btn variant="ghost" onClick={() => generate(true)} small>
+                    <RefreshCw size={12} /> Regenerate — different angle
+                  </Btn>
+                </div>
+              )}
             </Card>
           </div>
         )}
