@@ -761,6 +761,7 @@ export default function Dashboard() {
   const [leads, setLeads] = useState<DbLead[]>([])
   const [milestones, setMilestones] = useState<DbRoadmap[]>([])
   const [revenue, setRevenue] = useState<DbRevenue>({ id: '', consulting_target: 10500, saas_target: 10000, updated_at: '' })
+  const [agentTasks, setAgentTasks] = useState<{ assigned_to: string; title: string; status: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [content, setContentRaw, contentLoaded] = useLocalStorage('bl_content', DEFAULT_CONTENT)
@@ -770,10 +771,11 @@ export default function Dashboard() {
     setLoading(true)
     setError(null)
     try {
-      const [leadsRes, revenueRes, roadmapRes] = await Promise.all([
+      const [leadsRes, revenueRes, roadmapRes, agentRes] = await Promise.all([
         supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase.from('bl_revenue_targets').select('*').limit(1).single(),
         supabase.from('roadmap').select('*').not('week', 'is', null).order('week').order('sort_order'),
+        supabase.from('bl_agent_tasks').select('assigned_to, title, status').in('status', ['In Progress', 'Review', 'New']).order('updated_at', { ascending: false }),
       ])
 
       if (leadsRes.error) throw leadsRes.error
@@ -783,6 +785,7 @@ export default function Dashboard() {
       setLeads(leadsRes.data || [])
       if (revenueRes.data) setRevenue(revenueRes.data)
       setMilestones(roadmapRes.data || [])
+      setAgentTasks(agentRes.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
@@ -856,6 +859,39 @@ export default function Dashboard() {
   return (
     <div style={{ maxWidth: 1440, margin: '0 auto', padding: '32px 24px 80px' }}>
       <KpiBar leads={leads} milestones={milestones} content={content} consultingTarget={revenue.consulting_target} />
+
+      {/* Agent Activity */}
+      {(() => {
+        const agents = ['CEO Agent', 'Prospect Agent', 'Content Agent', 'Pipeline Agent'] as const
+        const colors: Record<string, string> = { 'CEO Agent': '#7C8CF8', 'Prospect Agent': '#53E9C5', 'Content Agent': '#F59E0B', 'Pipeline Agent': '#F97316' }
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginTop: 24 }}>
+            {agents.map(agent => {
+              const active = agentTasks.find(t => t.assigned_to === agent && t.status === 'In Progress')
+              const queued = agentTasks.filter(t => t.assigned_to === agent && t.status !== 'In Progress').length
+              const color = colors[agent]
+              return (
+                <div key={agent} style={{
+                  background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10,
+                  padding: '12px 14px', borderLeft: `3px solid ${color}`,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 4 }}>{agent.replace(' Agent', '')}</div>
+                  {active ? (
+                    <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                      {active.title}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>Idle</div>
+                  )}
+                  {queued > 0 && (
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>{queued} queued</div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
 
       <Pipeline leads={leads} onUpdate={updateLead} onAdd={addLead} onDelete={deleteLead} />
 
