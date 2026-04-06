@@ -1,9 +1,10 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Menu, X, Sun, Moon, Monitor } from 'lucide-react'
+import { Menu, X, Sun, Moon, Monitor, Bot, LogOut } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
+import { supabase } from '@/lib/supabase'
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard' },
@@ -12,13 +13,21 @@ const NAV_ITEMS = [
   { href: '/prospects', label: 'Prospects' },
   { href: '/analytics', label: 'Analytics' },
   { href: '/angel', label: 'Angel' },
+  { href: '/agents', label: 'Agents' },
   { href: '/health', label: 'Health' },
 ]
 
 export default function Nav() {
   const pathname = usePathname()
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -118,6 +127,27 @@ export default function Nav() {
           ))}
         </div>
 
+        {/* Sign out button */}
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: '6px 12px',
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            color: 'var(--text-muted)',
+            fontSize: 12,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+          className="nav-desktop"
+        >
+          <LogOut size={12} /> Sign out
+        </button>
+
         {/* Mobile hamburger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -176,6 +206,28 @@ export default function Nav() {
               {item.label}
             </Link>
           ))}
+          {/* Mobile sign out */}
+          <button
+            onClick={() => { setMobileOpen(false); handleLogout() }}
+            style={{
+              textDecoration: 'none',
+              fontSize: 14,
+              fontWeight: 400,
+              color: 'var(--text-muted)',
+              padding: '10px 12px',
+              borderRadius: 8,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <LogOut size={14} /> Sign out
+          </button>
           {/* Mobile theme toggle */}
           <div style={{
             display: 'flex',
