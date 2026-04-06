@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { Menu, X, Sun, Moon, Monitor, Bot, LogOut } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
@@ -19,14 +19,12 @@ const NAV_ITEMS = [
 
 export default function Nav() {
   const pathname = usePathname()
-  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    window.location.href = '/login'
   }
 
   const isActive = (href: string) => {

@@ -3,6 +3,7 @@ import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/lib/theme'
 import Nav from '@/components/Nav'
+import AuthGuard from '@/components/AuthGuard'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' })
@@ -20,8 +21,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
         <ThemeProvider>
-          <Nav />
-          <main>{children}</main>
+          <AuthGuard>
+            <Nav />
+            <main>{children}</main>
+          </AuthGuard>
         </ThemeProvider>
       </body>
     </html>
