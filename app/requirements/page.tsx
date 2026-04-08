@@ -16,6 +16,7 @@ import RequirementsKanban from '@/components/requirements/RequirementsKanban'
 import PhaseCards from '@/components/requirements/PhaseCards'
 import RequirementDetail from '@/components/requirements/RequirementDetail'
 import RequirementsCalendar from '@/components/requirements/RequirementsCalendar'
+import RequirementsDeps from '@/components/requirements/RequirementsDeps'
 
 const VIEW_OPTIONS = [
   {
@@ -355,16 +356,12 @@ export default function RequirementsPage() {
           phases={phases}
           onSelect={setSelectedItem}
         />
-      ) : (
-        <div style={{
-          padding: '40px 16px',
-          textAlign: 'center',
-          color: 'var(--text-muted)',
-          fontSize: 13,
-        }}>
-          Coming soon
-        </div>
-      )}
+      ) : currentView === 'deps' ? (
+        <RequirementsDeps
+          items={filteredItems}
+          onSelect={setSelectedItem}
+        />
+      ) : null}
 
       {/* Detail Panel */}
       {selectedItem && (
