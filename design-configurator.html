@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B&L Dashboard — Feature Design Configurator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0a0e1a; --bg-mid: #111827; --bg-card: #1a2236;
+    --border: #2a3452; --accent: #53E9C5; --accent-dim: #53e9c540;
+    --text: #e8eaf0; --text-muted: #8892a8;
+    --red: #F87171; --amber: #F59E0B; --green: #34D399; --purple: #7C8CF8; --blue: #60a5fa;
+    --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+  /* Left Panel — Controls */
+  .controls { width: 380px; min-width: 380px; background: var(--bg-mid); border-right: 1px solid var(--border); overflow-y: auto; padding: 20px; }
+  .controls h1 { font-size: 16px; color: var(--accent); margin-bottom: 4px; letter-spacing: 0.5px; }
+  .controls .subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 24px; }
+
+  .section { margin-bottom: 24px; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .option-group { margin-bottom: 16px; }
+  .option-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+  .toggle-row:hover { border-color: var(--accent-dim); }
+  .toggle-row.active { border-color: var(--accent); background: #53e9c508; }
+  .toggle-row .label { font-size: 13px; }
+  .toggle-row .desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .toggle-indicator { width: 36px; height: 20px; border-radius: 10px; background: var(--border); position: relative; transition: all 0.2s; flex-shrink: 0; margin-left: 12px; }
+  .toggle-row.active .toggle-indicator { background: var(--accent); }
+  .toggle-indicator::after { content: ''; width: 16px; height: 16px; border-radius: 50%; background: white; position: absolute; top: 2px; left: 2px; transition: all 0.2s; }
+  .toggle-row.active .toggle-indicator::after { left: 18px; }
+
+  .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .choice-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .choice-card { padding: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .choice-card:hover { border-color: var(--accent-dim); }
+  .choice-card.active { border-color: var(--accent); background: #53e9c510; }
+  .choice-card .icon { font-size: 20px; margin-bottom: 4px; }
+  .choice-card .name { font-size: 12px; font-weight: 600; }
+  .choice-card .meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Right Panel — Preview + Prompt */
+  .right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Preview */
+  .preview-area { flex: 1; overflow-y: auto; padding: 24px; }
+  .preview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .preview-header h2 { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .preview-tabs { display: flex; gap: 4px; }
+  .preview-tab { padding: 6px 14px; font-size: 12px; border-radius: 6px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .preview-tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+
+  .mock-page { background: var(--bg-mid); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; min-height: 500px; }
+
+  /* Mock Nav */
+  .mock-nav { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
+  .mock-nav .logo { font-size: 13px; font-weight: 700; color: var(--accent); }
+  .mock-nav .nav-items { display: flex; gap: 8px; }
+  .mock-nav .nav-item { font-size: 11px; color: var(--text-muted); padding: 4px 10px; border-radius: 4px; }
+  .mock-nav .nav-item.active { color: var(--accent); background: var(--accent-dim); }
+
+  /* Mock KPI Bar */
+  .mock-kpi { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .kpi-card { padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; flex: 1; min-width: 80px; }
+  .kpi-card .kpi-val { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .kpi-card .kpi-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Mock Phase Cards */
+  .mock-phases { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; border-bottom: 1px solid var(--border); }
+  .phase-card { padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; min-width: 120px; flex-shrink: 0; }
+  .phase-card .phase-name { font-size: 11px; font-weight: 600; }
+  .phase-card .phase-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .phase-card .phase-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+
+  /* Mock View Toggle + Filters */
+  .mock-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .view-toggles { display: flex; gap: 4px; }
+  .view-btn { padding: 7px 10px; font-size: 11px; border-radius: 5px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+  .view-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+  .view-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .view-btn svg { display: block; }
+  .mock-filters { display: flex; gap: 6px; }
+  .filter-pill { padding: 4px 10px; font-size: 10px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); }
+
+  /* Mock Table */
+  .mock-table { width: 100%; border-collapse: collapse; }
+  .mock-table th { font-size: 10px; color: var(--text-muted); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
+  .mock-table td { font-size: 11px; padding: 8px 12px; border-bottom: 1px solid #1e2a42; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .badge-critical { background: #f8717120; color: var(--red); }
+  .badge-high { background: #f59e0b20; color: var(--amber); }
+  .badge-medium { background: #7c8cf820; color: var(--purple); }
+  .badge-backlog { background: #8892a820; color: var(--text-muted); }
+  .badge-progress { background: #60a5fa20; color: var(--blue); }
+  .badge-done { background: #34d39920; color: var(--green); }
+
+  /* Mock Kanban */
+  .mock-kanban { display: flex; gap: 8px; padding: 12px; overflow-x: auto; min-height: 280px; }
+  .kanban-col { flex: 1; min-width: 130px; background: var(--bg-card); border-radius: 8px; padding: 8px; }
+  .kanban-col-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .kanban-card { padding: 8px; background: var(--bg-mid); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; font-size: 10px; }
+  .kanban-card .card-id { color: var(--accent); font-weight: 600; font-size: 10px; }
+  .kanban-card .card-title { margin-top: 2px; font-size: 10px; line-height: 1.3; }
+
+  /* Mock Calendar */
+  .mock-calendar { padding: 12px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-header { font-size: 10px; font-weight: 600; color: var(--text-muted); text-align: center; padding: 6px; }
+  .cal-cell { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; min-height: 60px; padding: 4px; }
+  .cal-cell .cal-date { font-size: 9px; color: var(--text-muted); margin-bottom: 3px; }
+  .cal-event { padding: 2px 4px; border-radius: 3px; font-size: 8px; margin-bottom: 2px; line-height: 1.3; }
+  .cal-event.compliance { background: #53e9c520; color: var(--accent); border-left: 2px solid var(--accent); }
+  .cal-event.practice { background: #7c8cf820; color: var(--purple); border-left: 2px solid var(--purple); }
+  .cal-event.tax { background: #f59e0b20; color: var(--amber); border-left: 2px solid var(--amber); }
+  .cal-event.automation { background: #60a5fa20; color: var(--blue); border-left: 2px solid var(--blue); }
+
+  /* Mock Dependency Graph */
+  .mock-deps { padding: 16px; min-height: 280px; position: relative; }
+  .dep-node { position: absolute; padding: 6px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font-size: 9px; font-weight: 600; white-space: nowrap; }
+  .dep-node.status-done { border-color: var(--green); color: var(--green); }
+  .dep-node.status-progress { border-color: var(--blue); color: var(--blue); }
+  .dep-node.status-backlog { border-color: var(--text-muted); }
+  .dep-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .dep-svg line { stroke: var(--border); stroke-width: 1.5; }
+  .dep-svg line.critical { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4,2; }
+
+  /* Mock Detail Panel */
+  .mock-detail-panel { position: absolute; right: 0; top: 0; width: 320px; height: 100%; background: var(--bg-card); border-left: 1px solid var(--border); padding: 16px; display: none; overflow-y: auto; z-index: 10; }
+  .mock-detail-panel.visible { display: block; }
+  .detail-field { margin-bottom: 12px; }
+  .detail-field label { font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-field .val { font-size: 12px; padding: 6px 10px; background: var(--bg-mid); border: 1px solid var(--border); border-radius: 6px; }
+  .comment-thread { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
+  .comment { padding: 8px; background: var(--bg-mid); border-radius: 6px; margin-bottom: 6px; }
+  .comment .comment-author { font-size: 10px; font-weight: 600; color: var(--accent); }
+  .comment .comment-body { font-size: 11px; margin-top: 3px; line-height: 1.4; }
+  .comment .comment-time { font-size: 9px; color: var(--text-muted); margin-top: 3px; }
+  .comment-reply { margin-left: 16px; border-left: 2px solid var(--accent-dim); padding-left: 8px; }
+
+  /* Prompt Area */
+  .prompt-area { background: var(--bg-mid); border-top: 1px solid var(--border); padding: 16px 24px; max-height: 240px; overflow-y: auto; }
+  .prompt-area h3 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .prompt-text { font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--text); white-space: pre-wrap; background: var(--bg-card); padding: 12px; border-radius: 8px; border: 1px solid var(--border); max-height: 140px; overflow-y: auto; }
+  .copy-btn { margin-top: 8px; padding: 8px 20px; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { opacity: 0.9; }
+  .copy-btn.copied { background: var(--green); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Controls Panel -->
+<div class="controls">
+  <h1>B&L Design Configurator</h1>
+  <p class="subtitle">Toggle features, pick views — preview updates live</p>
+
+  <!-- REQUIREMENTS PAGE -->
+  <div class="section">
+    <div class="section-title">Requirements Page</div>
+
+    <div class="option-group">
+      <div class="option-label">Views</div>
+      <div class="toggle-row active" data-key="req_table" onclick="toggle(this)">
+        <div><div class="label">Table View</div><div class="desc">Sortable, filterable, inline edit</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_kanban" onclick="toggle(this)">
+        <div><div class="label">Kanban Board</div><div class="desc">Drag-drop columns by status</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_calendar" onclick="toggle(this)">
+        <div><div class="label">Calendar View</div><div class="desc">Items plotted by week target</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_deps" onclick="toggle(this)">
+        <div><div class="label">Dependency Map</div><div class="desc">React Flow interactive graph</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Features</div>
+      <div class="toggle-row active" data-key="req_kpi" onclick="toggle(this)">
+        <div><div class="label">KPI Bar</div><div class="desc">Priority + status counts at top</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_phases" onclick="toggle(this)">
+        <div><div class="label">Phase Progress Cards</div><div class="desc">Scrollable row with completion %</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_filters" onclick="toggle(this)">
+        <div><div class="label">Filter Bar</div><div class="desc">Phase, Domain, Priority, Status, etc.</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_detail" onclick="toggle(this)">
+        <div><div class="label">Detail Panel</div><div class="desc">Slide-in panel with full edit form</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_bulk" onclick="toggle(this)">
+        <div><div class="label">Bulk Actions</div><div class="desc">Multi-select + batch status update</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="req_inline_edit" onclick="toggle(this)">
+        <div><div class="label">Inline Editing</div><div class="desc">Click-to-edit cells in table view</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="critical_path" onclick="toggle(this)">
+        <div><div class="label">Critical Path Highlight</div><div class="desc">Show longest dependency chain</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT CALENDAR -->
+  <div class="section">
+    <div class="section-title">Content Calendar</div>
+
+    <div class="option-group">
+      <div class="option-label">Views</div>
+      <div class="toggle-row active" data-key="cal_table" onclick="toggle(this)">
+        <div><div class="label">Table View</div><div class="desc">Post list with sortable columns</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="cal_calendar" onclick="toggle(this)">
+        <div><div class="label">Calendar View</div><div class="desc">Monthly grid with drag-to-reschedule</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="cal_kanban" onclick="toggle(this)">
+        <div><div class="label">Kanban Board</div><div class="desc">To Draft → Drafting → Review → Published</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Drafting</div>
+      <div class="toggle-row active" data-key="cal_inline_draft" onclick="toggle(this)">
+        <div><div class="label">Inline Drafting</div><div class="desc">Edit script/draft in detail panel</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="cal_studio" onclick="toggle(this)">
+        <div><div class="label">Open in Studio</div><div class="desc">Pre-fill Studio tab for AI generation</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="cal_drag_reschedule" onclick="toggle(this)">
+        <div><div class="label">Drag to Reschedule</div><div class="desc">Move posts between dates on calendar</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Features</div>
+      <div class="toggle-row active" data-key="cal_kpi" onclick="toggle(this)">
+        <div><div class="label">KPI Bar</div><div class="desc">Post counts by status + pillar breakdown</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="cal_filters" onclick="toggle(this)">
+        <div><div class="label">Filters</div><div class="desc">Week, Pillar, Channel, Format, Status</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="cal_pillar_colors" onclick="toggle(this)">
+        <div><div class="label">Pillar Color Coding</div><div class="desc">Visual pillar indicators on calendar</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARED FEATURES -->
+  <div class="section">
+    <div class="section-title">Shared Features</div>
+
+    <div class="option-group">
+      <div class="option-label">Comments</div>
+      <div class="toggle-row active" data-key="comments_req" onclick="toggle(this)">
+        <div><div class="label">On Requirements</div><div class="desc">Threaded comments on each requirement</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="comments_cal" onclick="toggle(this)">
+        <div><div class="label">On Content Calendar</div><div class="desc">Threaded comments on each post</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="comments_threaded" onclick="toggle(this)">
+        <div><div class="label">Threaded Replies</div><div class="desc">Reply to specific comments</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Export / Download</div>
+      <div class="toggle-row active" data-key="export_xlsx" onclick="toggle(this)">
+        <div><div class="label">Excel (.xlsx)</div><div class="desc">Working data format</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="export_csv" onclick="toggle(this)">
+        <div><div class="label">CSV</div><div class="desc">Universal compatibility</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="export_pdf" onclick="toggle(this)">
+        <div><div class="label">PDF Report</div><div class="desc">Polished format for stakeholders</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Data Sync</div>
+      <div class="toggle-row active" data-key="sync_gsheet" onclick="toggle(this)">
+        <div><div class="label">Google Sheets Sync</div><div class="desc">Supabase Edge Function + Apps Script</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="sync_upload" onclick="toggle(this)">
+        <div><div class="label">Excel Upload</div><div class="desc">Manual upload fallback</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="sync_seed" onclick="toggle(this)">
+        <div><div class="label">Seed from Existing File</div><div class="desc">Import beacon-requirements.xlsx as initial data</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD & SYNC -->
+  <div class="section">
+    <div class="section-title">Upload & Sync Details</div>
+
+    <div class="option-group">
+      <div class="option-label">Excel Upload Features</div>
+      <div class="toggle-row active" data-key="upload_preview" onclick="toggle(this)">
+        <div><div class="label">Import Preview</div><div class="desc">Preview rows before importing, show validation issues</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="upload_upsert" onclick="toggle(this)">
+        <div><div class="label">Smart Upsert</div><div class="desc">Match by ref_id — create new, update existing</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="upload_history" onclick="toggle(this)">
+        <div><div class="label">Upload History</div><div class="desc">Log of past imports with timestamps</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Google Sheets Features</div>
+      <div class="toggle-row active" data-key="gsheet_settings" onclick="toggle(this)">
+        <div><div class="label">Settings Panel</div><div class="desc">Gear icon to connect/disconnect a sheet</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="gsheet_schedule" onclick="toggle(this)">
+        <div><div class="label">Scheduled Polling</div><div class="desc">Edge Function fetches every 5 mins</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="gsheet_realtime" onclick="toggle(this)">
+        <div><div class="label">Real-time Push</div><div class="desc">Apps Script webhook on cell change</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="gsheet_manual" onclick="toggle(this)">
+        <div><div class="label">Sync Now Button</div><div class="desc">Manual trigger for on-demand sync</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="gsheet_timestamp" onclick="toggle(this)">
+        <div><div class="label">Last Synced Indicator</div><div class="desc">Show when data was last pulled</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="gsheet_toggle" onclick="toggle(this)">
+        <div><div class="label">Sync On/Off Toggle</div><div class="desc">Enable or disable sync per entity type</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Conflict Handling</div>
+      <div class="toggle-row active" data-key="conflict_sheet_wins" onclick="toggle(this)">
+        <div><div class="label">Google Sheet as Source of Truth</div><div class="desc">Sheet overwrites dashboard on sync</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="conflict_indicator" onclick="toggle(this)">
+        <div><div class="label">Edit Source Indicator</div><div class="desc">Show if item was last updated via sync or manually</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT & DOWNLOAD -->
+  <div class="section">
+    <div class="section-title">Export & Download Details</div>
+
+    <div class="option-group">
+      <div class="option-label">Excel Export</div>
+      <div class="toggle-row active" data-key="export_xlsx_filters" onclick="toggle(this)">
+        <div><div class="label">Respect Active Filters</div><div class="desc">Export only what's currently filtered/visible</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="export_xlsx_comments" onclick="toggle(this)">
+        <div><div class="label">Include Comments</div><div class="desc">Add comments as an extra sheet/column</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">PDF Report</div>
+      <div class="toggle-row active" data-key="pdf_cover" onclick="toggle(this)">
+        <div><div class="label">Cover Page</div><div class="desc">Title, date, B&L branding</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="pdf_summary" onclick="toggle(this)">
+        <div><div class="label">Executive Summary</div><div class="desc">KPI snapshot, phase progress, status breakdown</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="pdf_table" onclick="toggle(this)">
+        <div><div class="label">Full Item Table</div><div class="desc">All items with status, priority, assigned</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="pdf_phase_breakdown" onclick="toggle(this)">
+        <div><div class="label">Phase Breakdown</div><div class="desc">Progress per phase with gate criteria</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="pdf_comments" onclick="toggle(this)">
+        <div><div class="label">Include Comments</div><div class="desc">Append comment threads per item</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <div class="option-label">Export UX</div>
+      <div class="toggle-row active" data-key="export_button_page" onclick="toggle(this)">
+        <div><div class="label">Export Button on Page</div><div class="desc">Visible download button on Requirements + Calendar</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+      <div class="toggle-row active" data-key="export_format_picker" onclick="toggle(this)">
+        <div><div class="label">Format Picker Dropdown</div><div class="desc">Single button with dropdown: Excel, CSV, PDF</div></div>
+        <div class="toggle-indicator"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Right Panel -->
+<div class="right">
+  <!-- Preview Area -->
+  <div class="preview-area">
+    <div class="preview-header">
+      <h2>Live Preview</h2>
+      <div class="preview-tabs">
+        <div class="preview-tab active" onclick="switchPage('requirements', this)">Requirements</div>
+        <div class="preview-tab" onclick="switchPage('content', this)">Content Calendar</div>
+        <div class="preview-tab" onclick="switchPage('sync', this)">Upload & Sync</div>
+        <div class="preview-tab" onclick="switchPage('export', this)">Export</div>
+      </div>
+    </div>
+
+    <!-- Requirements Page Preview -->
+    <div id="preview-requirements" class="mock-page" style="position: relative;">
+      <div class="mock-nav">
+        <div class="logo">B&L</div>
+        <div class="nav-items">
+          <div class="nav-item">Dashboard</div>
+          <div class="nav-item">Growth</div>
+          <div class="nav-item">Content</div>
+          <div class="nav-item">Prospects</div>
+          <div class="nav-item active">Requirements</div>
+          <div class="nav-item">Analytics</div>
+        </div>
+      </div>
+
+      <div id="req-kpi" class="mock-kpi">
+        <div class="kpi-card"><div class="kpi-val">66</div><div class="kpi-label">Total</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">18</div><div class="kpi-label">Critical</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--amber)">39</div><div class="kpi-label">High</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--purple)">9</div><div class="kpi-label">Medium</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--text-muted)">66</div><div class="kpi-label">Backlog</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">0</div><div class="kpi-label">Done</div></div>
+      </div>
+
+      <div id="req-phases" class="mock-phases">
+        <div class="phase-card"><div class="phase-name">Phase 0</div><div style="font-size:9px;color:var(--text-muted)">Fix Blockers</div><div class="phase-bar"><div class="phase-bar-fill" style="width:0%"></div></div></div>
+        <div class="phase-card"><div class="phase-name">Phase 1</div><div style="font-size:9px;color:var(--text-muted)">Data Model</div><div class="phase-bar"><div class="phase-bar-fill" style="width:0%"></div></div></div>
+        <div class="phase-card"><div class="phase-name">Phase 1.5</div><div style="font-size:9px;color:var(--text-muted)">Risk Scoring</div><div class="phase-bar"><div class="phase-bar-fill" style="width:0%"></div></div></div>
+        <div class="phase-card"><div class="phase-name">Phase 2</div><div style="font-size:9px;color:var(--text-muted)">Core UI</div><div class="phase-bar"><div class="phase-bar-fill" style="width:0%"></div></div></div>
+        <div class="phase-card"><div class="phase-name">Phase 3</div><div style="font-size:9px;color:var(--text-muted)">Risk Flow</div><div class="phase-bar"><div class="phase-bar-fill" style="width:0%"></div></div></div>
+        <div class="phase-card"><div class="phase-name">Phase 4</div><div style="font-size:9px;color:var(--text-muted)">AML Flow</div><div class="phase-bar"><div class="phase-bar-fill" style="width:0%"></div></div></div>
+        <div class="phase-card"><div class="phase-name">Phase 5</div><div style="font-size:9px;color:var(--text-muted)">Templates</div><div class="phase-bar"><div class="phase-bar-fill" style="width:0%"></div></div></div>
+      </div>
+
+      <div id="req-toolbar" class="mock-toolbar">
+        <div class="view-toggles" id="req-views">
+          <div class="view-btn active" data-view="table" onclick="switchReqView('table', this)" title="Table"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></div>
+          <div class="view-btn" data-view="kanban" onclick="switchReqView('kanban', this)" title="Kanban"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg></div>
+          <div class="view-btn" data-view="calendar" onclick="switchReqView('calendar', this)" title="Calendar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
+          <div class="view-btn" data-view="deps" onclick="switchReqView('deps', this)" title="Dependencies"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="10.5" y2="16"/><line x1="15.5" y1="7.5" x2="13.5" y2="16"/></svg></div>
+        </div>
+        <div id="req-filters" class="mock-filters">
+          <div class="filter-pill">Phase ▾</div>
+          <div class="filter-pill">Domain ▾</div>
+          <div class="filter-pill">Priority ▾</div>
+          <div class="filter-pill">Status ▾</div>
+          <div class="filter-pill">Assigned ▾</div>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div id="req-view-table" class="mock-view">
+        <table class="mock-table">
+          <thead><tr><th>ID</th><th>Phase</th><th>Requirement</th><th>Priority</th><th>Status</th><th>Complexity</th><th>Assigned</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--accent);font-weight:600">R001</td><td>Phase 0</td><td>Fix provisioning flow</td><td><span class="badge badge-critical">Critical</span></td><td><span class="badge badge-backlog">Backlog</span></td><td>M</td><td>Claude Code</td></tr>
+            <tr><td style="color:var(--accent);font-weight:600">R002</td><td>Phase 0</td><td>Fix role model consistency</td><td><span class="badge badge-critical">Critical</span></td><td><span class="badge badge-backlog">Backlog</span></td><td>L</td><td>Claude Code</td></tr>
+            <tr><td style="color:var(--accent);font-weight:600">R003</td><td>Phase 0</td><td>JWT custom claims</td><td><span class="badge badge-critical">Critical</span></td><td><span class="badge badge-backlog">Backlog</span></td><td>S</td><td>Claude Code</td></tr>
+            <tr><td style="color:var(--accent);font-weight:600">R010</td><td>Phase 1</td><td>Contacts table</td><td><span class="badge badge-critical">Critical</span></td><td><span class="badge badge-progress">In Progress</span></td><td>M</td><td>Claude Code</td></tr>
+            <tr><td style="color:var(--accent);font-weight:600">R011</td><td>Phase 1</td><td>Risk assessment templates</td><td><span class="badge badge-critical">Critical</span></td><td><span class="badge badge-backlog">Backlog</span></td><td>L</td><td>Claude Code</td></tr>
+            <tr><td style="color:var(--accent);font-weight:600">R012</td><td>Phase 1</td><td>Risk assessments</td><td><span class="badge badge-critical">Critical</span></td><td><span class="badge badge-backlog">Backlog</span></td><td>L</td><td>Claude Code</td></tr>
+            <tr><td style="color:var(--accent);font-weight:600">R040</td><td>Phase 2</td><td>Client detail page</td><td><span class="badge badge-high">High</span></td><td><span class="badge badge-backlog">Backlog</span></td><td>L</td><td>Claude Code</td></tr>
+            <tr><td style="color:var(--accent);font-weight:600">R090</td><td>Phase 7</td><td>Job management</td><td><span class="badge badge-critical">Critical</span></td><td><span class="badge badge-backlog">Backlog</span></td><td>XL</td><td>Claude Code</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Kanban View -->
+      <div id="req-view-kanban" class="mock-view" style="display:none">
+        <div class="mock-kanban">
+          <div class="kanban-col">
+            <div class="kanban-col-title">Backlog (63)</div>
+            <div class="kanban-card"><div class="card-id">R001</div><div class="card-title">Fix provisioning flow</div><div style="margin-top:4px"><span class="badge badge-critical" style="font-size:8px">Critical</span></div></div>
+            <div class="kanban-card"><div class="card-id">R002</div><div class="card-title">Fix role model consistency</div><div style="margin-top:4px"><span class="badge badge-critical" style="font-size:8px">Critical</span></div></div>
+            <div class="kanban-card"><div class="card-id">R011</div><div class="card-title">Risk assessment templates</div><div style="margin-top:4px"><span class="badge badge-critical" style="font-size:8px">Critical</span></div></div>
+            <div style="font-size:9px;color:var(--text-muted);padding:8px;text-align:center">+ 60 more</div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Ready (0)</div>
+            <div style="font-size:9px;color:var(--text-muted);padding:16px;text-align:center;opacity:0.5">Drop items here</div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">In Progress (2)</div>
+            <div class="kanban-card"><div class="card-id">R010</div><div class="card-title">Contacts table</div><div style="margin-top:4px"><span class="badge badge-critical" style="font-size:8px">Critical</span></div></div>
+            <div class="kanban-card"><div class="card-id">R003</div><div class="card-title">JWT custom claims</div><div style="margin-top:4px"><span class="badge badge-critical" style="font-size:8px">Critical</span></div></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Review (1)</div>
+            <div class="kanban-card"><div class="card-id">R020</div><div class="card-title">RLS policies</div><div style="margin-top:4px"><span class="badge badge-critical" style="font-size:8px">Critical</span></div></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Done (0)</div>
+            <div style="font-size:9px;color:var(--text-muted);padding:16px;text-align:center;opacity:0.5">Completed items</div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Blocked (0)</div>
+            <div style="font-size:9px;color:var(--text-muted);padding:16px;text-align:center;opacity:0.5">Blocked items</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar View -->
+      <div id="req-view-calendar" class="mock-view" style="display:none">
+        <div class="mock-calendar">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px;text-align:center">April 2026</div>
+          <div class="cal-grid">
+            <div class="cal-header">Mon</div><div class="cal-header">Tue</div><div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div><div class="cal-header">Sun</div>
+            <div class="cal-cell"><div class="cal-date">6</div><div class="cal-event compliance">R001 Provisioning</div><div class="cal-event compliance">R002 Roles</div></div>
+            <div class="cal-cell"><div class="cal-date">7</div><div class="cal-event compliance">R003 JWT</div></div>
+            <div class="cal-cell"><div class="cal-date">8</div></div>
+            <div class="cal-cell"><div class="cal-date">9</div></div>
+            <div class="cal-cell"><div class="cal-date">10</div></div>
+            <div class="cal-cell"><div class="cal-date">11</div></div>
+            <div class="cal-cell"><div class="cal-date">12</div></div>
+            <div class="cal-cell"><div class="cal-date">13</div><div class="cal-event practice">R010 Contacts</div><div class="cal-event practice">R011 Templates</div></div>
+            <div class="cal-cell"><div class="cal-date">14</div><div class="cal-event practice">R012 Risk Assess</div></div>
+            <div class="cal-cell"><div class="cal-date">15</div><div class="cal-event practice">R013 Responses</div></div>
+            <div class="cal-cell"><div class="cal-date">16</div><div class="cal-event tax">R014 AML</div></div>
+            <div class="cal-cell"><div class="cal-date">17</div></div>
+            <div class="cal-cell"><div class="cal-date">18</div></div>
+            <div class="cal-cell"><div class="cal-date">19</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dependency Map View -->
+      <div id="req-view-deps" class="mock-view" style="display:none;min-height:280px;position:relative">
+        <div class="mock-deps">
+          <svg class="dep-svg" viewBox="0 0 700 250">
+            <line x1="65" y1="30" x2="160" y2="80" class="critical"/>
+            <line x1="65" y1="30" x2="160" y2="130" class="critical"/>
+            <line x1="65" y1="30" x2="160" y2="180"/>
+            <line x1="200" y1="80" x2="330" y2="60" class="critical"/>
+            <line x1="200" y1="80" x2="330" y2="110"/>
+            <line x1="200" y1="130" x2="330" y2="110"/>
+            <line x1="200" y1="130" x2="330" y2="160" class="critical"/>
+            <line x1="370" y1="60" x2="500" y2="80"/>
+            <line x1="370" y1="160" x2="500" y2="130" class="critical"/>
+            <line x1="540" y1="80" x2="620" y2="110"/>
+            <line x1="540" y1="130" x2="620" y2="110" class="critical"/>
+          </svg>
+          <div class="dep-node status-backlog" style="left:20px;top:18px">R001</div>
+          <div class="dep-node status-backlog" style="left:140px;top:68px">R010</div>
+          <div class="dep-node status-backlog" style="left:140px;top:118px">R011</div>
+          <div class="dep-node status-backlog" style="left:140px;top:168px">R014</div>
+          <div class="dep-node status-backlog" style="left:310px;top:48px">R012</div>
+          <div class="dep-node status-backlog" style="left:310px;top:98px">R013</div>
+          <div class="dep-node status-backlog" style="left:310px;top:148px">R030</div>
+          <div class="dep-node status-backlog" style="left:480px;top:68px">R051</div>
+          <div class="dep-node status-backlog" style="left:480px;top:118px">R031</div>
+          <div class="dep-node status-backlog" style="left:600px;top:98px">R094</div>
+          <div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:var(--text-muted)">
+            <span style="color:var(--accent)">---</span> Critical path &nbsp;
+            <span style="color:var(--border)">---</span> Dependency
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Panel -->
+      <div id="req-detail" class="mock-detail-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:700;color:var(--accent)">R001</div>
+          <div style="font-size:10px;color:var(--text-muted);cursor:pointer" onclick="document.getElementById('req-detail').classList.remove('visible')">Close</div>
+        </div>
+        <div class="detail-field"><label>Requirement</label><div class="val">Fix provisioning flow</div></div>
+        <div class="detail-field"><label>Phase</label><div class="val">Phase 0</div></div>
+        <div class="detail-field"><label>Priority</label><div class="val"><span class="badge badge-critical">Critical</span></div></div>
+        <div class="detail-field"><label>Status</label><div class="val"><span class="badge badge-backlog">Backlog</span></div></div>
+        <div class="detail-field"><label>Acceptance Criteria</label><div class="val" style="font-size:10px;line-height:1.4">New firm created; owner membership exists; JWT contains firm_id + role</div></div>
+
+        <div id="detail-comments" class="comment-thread">
+          <div style="font-size:11px;font-weight:600;margin-bottom:8px">Comments</div>
+          <div class="comment">
+            <div class="comment-author">Femi</div>
+            <div class="comment-body">This is blocking everything in Phase 1. Need to prioritise.</div>
+            <div class="comment-time">2 hours ago</div>
+          </div>
+          <div class="comment comment-reply">
+            <div class="comment-author">Claude Code</div>
+            <div class="comment-body">Agreed. I'll tackle this first — the ghost record issue needs a migration.</div>
+            <div class="comment-time">1 hour ago</div>
+          </div>
+          <div style="margin-top:8px;padding:6px 10px;background:var(--bg-mid);border:1px solid var(--border);border-radius:6px;font-size:10px;color:var(--text-muted)">Add a comment...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Calendar Preview -->
+    <div id="preview-content" class="mock-page" style="display:none;position:relative">
+      <div class="mock-nav">
+        <div class="logo">B&L</div>
+        <div class="nav-items">
+          <div class="nav-item">Dashboard</div>
+          <div class="nav-item">Growth</div>
+          <div class="nav-item active">Content</div>
+          <div class="nav-item">Prospects</div>
+          <div class="nav-item">Requirements</div>
+          <div class="nav-item">Analytics</div>
+        </div>
+      </div>
+
+      <!-- Content sub-tabs -->
+      <div style="display:flex;gap:4px;padding:10px 16px;border-bottom:1px solid var(--border)">
+        <div style="padding:5px 12px;font-size:11px;border-radius:5px;color:var(--text-muted)">Sources</div>
+        <div style="padding:5px 12px;font-size:11px;border-radius:5px;color:var(--text-muted)">Queue</div>
+        <div style="padding:5px 12px;font-size:11px;border-radius:5px;color:var(--text-muted)">Studio</div>
+        <div style="padding:5px 12px;font-size:11px;border-radius:5px;color:var(--text-muted)">Scheduled</div>
+        <div style="padding:5px 12px;font-size:11px;border-radius:5px;background:var(--accent);color:var(--bg);font-weight:600">Calendar</div>
+      </div>
+
+      <div id="cal-kpi" class="mock-kpi">
+        <div class="kpi-card"><div class="kpi-val">48</div><div class="kpi-label">Total Posts</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--text-muted)">48</div><div class="kpi-label">To Draft</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--blue)">0</div><div class="kpi-label">Drafting</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--amber)">0</div><div class="kpi-label">Review</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">0</div><div class="kpi-label">Published</div></div>
+      </div>
+
+      <div id="cal-toolbar" class="mock-toolbar">
+        <div class="view-toggles" id="cal-views">
+          <div class="view-btn active" data-view="table" onclick="switchCalView('table', this)" title="Table"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></div>
+          <div class="view-btn" data-view="calendar" onclick="switchCalView('calendar', this)" title="Calendar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
+          <div class="view-btn" data-view="kanban" onclick="switchCalView('kanban', this)" title="Kanban"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg></div>
+        </div>
+        <div id="cal-filters-bar" class="mock-filters">
+          <div class="filter-pill">Week ▾</div>
+          <div class="filter-pill">Pillar ▾</div>
+          <div class="filter-pill">Channel ▾</div>
+          <div class="filter-pill">Status ▾</div>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div id="cal-view-table" class="mock-view">
+        <table class="mock-table">
+          <thead><tr><th>Wk</th><th>Date</th><th>Day</th><th>Channel</th><th>Pillar</th><th>Topic</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Apr 13</td><td>Mon</td><td>Text Post</td><td><span style="color:var(--accent)">Compliance</span></td><td>Most small businesses don't fail...</td><td><span class="badge badge-backlog">To Draft</span></td></tr>
+            <tr><td>1</td><td>Apr 15</td><td>Wed</td><td>Text Post</td><td><span style="color:var(--purple)">Behind Practice</span></td><td>I left a Product Manager role...</td><td><span class="badge badge-backlog">To Draft</span></td></tr>
+            <tr><td>1</td><td>Apr 16</td><td>Thu</td><td>Video</td><td><span style="color:var(--amber)">Tax & Deadlines</span></td><td>3 deadlines every UK business...</td><td><span class="badge badge-backlog">To Draft</span></td></tr>
+            <tr><td>1</td><td>Apr 17</td><td>Fri</td><td>Text Post</td><td><span style="color:var(--blue)">Automation</span></td><td>Your accountant shouldn't be...</td><td><span class="badge badge-backlog">To Draft</span></td></tr>
+            <tr><td>2</td><td>Apr 20</td><td>Mon</td><td>Text Post</td><td><span style="color:var(--red)">Industry</span></td><td>HMRC is investing 1.75 billion...</td><td><span class="badge badge-backlog">To Draft</span></td></tr>
+            <tr><td>2</td><td>Apr 22</td><td>Wed</td><td>Text Post</td><td><span style="color:var(--accent)">Compliance</span></td><td>AML checks aren't just for...</td><td><span class="badge badge-backlog">To Draft</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Calendar View -->
+      <div id="cal-view-calendar" class="mock-view" style="display:none">
+        <div class="mock-calendar">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px;text-align:center">April 2026 — Week 1-2</div>
+          <div class="cal-grid">
+            <div class="cal-header">Mon</div><div class="cal-header">Tue</div><div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div><div class="cal-header">Sun</div>
+            <div class="cal-cell"><div class="cal-date">13</div><div class="cal-event compliance">Compliance: Most small businesses...</div></div>
+            <div class="cal-cell"><div class="cal-date">14</div></div>
+            <div class="cal-cell"><div class="cal-date">15</div><div class="cal-event practice">Behind Practice: I left a PM role...</div></div>
+            <div class="cal-cell"><div class="cal-date">16</div><div class="cal-event tax">Tax: 3 deadlines every...</div></div>
+            <div class="cal-cell"><div class="cal-date">17</div><div class="cal-event automation">Automation: Your accountant...</div></div>
+            <div class="cal-cell"><div class="cal-date">18</div></div>
+            <div class="cal-cell"><div class="cal-date">19</div></div>
+            <div class="cal-cell"><div class="cal-date">20</div><div class="cal-event tax">Industry: HMRC investing...</div></div>
+            <div class="cal-cell"><div class="cal-date">21</div></div>
+            <div class="cal-cell"><div class="cal-date">22</div><div class="cal-event compliance">Compliance: AML checks...</div></div>
+            <div class="cal-cell"><div class="cal-date">23</div><div class="cal-event practice">Behind Practice: What happens on onboard...</div></div>
+            <div class="cal-cell"><div class="cal-date">24</div><div class="cal-event automation">Client Wins: 4 months behind...</div></div>
+            <div class="cal-cell"><div class="cal-date">25</div></div>
+            <div class="cal-cell"><div class="cal-date">26</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kanban View -->
+      <div id="cal-view-kanban" class="mock-view" style="display:none">
+        <div class="mock-kanban">
+          <div class="kanban-col">
+            <div class="kanban-col-title">To Draft (48)</div>
+            <div class="kanban-card"><div style="font-size:9px;color:var(--accent)">Apr 13 · Compliance</div><div class="card-title">Most small businesses don't fail because of bad ideas</div></div>
+            <div class="kanban-card"><div style="font-size:9px;color:var(--purple)">Apr 15 · Behind Practice</div><div class="card-title">I left a Product Manager role at Barclays</div></div>
+            <div class="kanban-card"><div style="font-size:9px;color:var(--amber)">Apr 16 · Tax</div><div class="card-title">3 deadlines every UK business owner forgets</div></div>
+            <div style="font-size:9px;color:var(--text-muted);padding:8px;text-align:center">+ 45 more</div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Drafting (0)</div>
+            <div style="font-size:9px;color:var(--text-muted);padding:16px;text-align:center;opacity:0.5">Drag posts here</div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Review (0)</div>
+            <div style="font-size:9px;color:var(--text-muted);padding:16px;text-align:center;opacity:0.5">Ready for review</div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Scheduled (0)</div>
+            <div style="font-size:9px;color:var(--text-muted);padding:16px;text-align:center;opacity:0.5">Queued for publish</div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-title">Published (0)</div>
+            <div style="font-size:9px;color:var(--text-muted);padding:16px;text-align:center;opacity:0.5">Live posts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Panel -->
+      <div id="cal-detail" class="mock-detail-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:700;color:var(--accent)">Week 1 — Monday</div>
+          <div style="font-size:10px;color:var(--text-muted);cursor:pointer" onclick="document.getElementById('cal-detail').classList.remove('visible')">Close</div>
+        </div>
+        <div class="detail-field"><label>Topic</label><div class="val">Most small businesses don't fail because of bad ideas</div></div>
+        <div class="detail-field"><label>Pillar</label><div class="val">Compliance Made Simple</div></div>
+        <div class="detail-field"><label>Key Message</label><div class="val" style="font-size:10px;line-height:1.4">They fail because they miss a filing deadline...</div></div>
+        <div class="detail-field"><label>CTA</label><div class="val">If that sounds familiar, let's talk</div></div>
+        <div class="detail-field"><label>Script / Draft</label><div class="val" style="min-height:60px;font-size:10px;color:var(--text-muted)">Click to start drafting...</div></div>
+        <div style="margin-top:8px">
+          <div style="padding:7px 14px;background:var(--accent);color:var(--bg);border-radius:6px;font-size:11px;font-weight:600;text-align:center;cursor:pointer">Open in Studio</div>
+        </div>
+        <div id="cal-detail-comments" class="comment-thread">
+          <div style="font-size:11px;font-weight:600;margin-bottom:8px">Comments</div>
+          <div class="comment">
+            <div class="comment-author">Femi</div>
+            <div class="comment-body">Need to soften the CTA — less salesy</div>
+            <div class="comment-time">3 hours ago</div>
+          </div>
+          <div style="margin-top:8px;padding:6px 10px;background:var(--bg-mid);border:1px solid var(--border);border-radius:6px;font-size:10px;color:var(--text-muted)">Add a comment...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Upload & Sync Preview -->
+    <div id="preview-sync" class="mock-page" style="display:none;position:relative">
+      <div class="mock-nav">
+        <div class="logo">B&L</div>
+        <div class="nav-items">
+          <div class="nav-item">Dashboard</div>
+          <div class="nav-item">Growth</div>
+          <div class="nav-item">Content</div>
+          <div class="nav-item active">Requirements</div>
+          <div class="nav-item">Analytics</div>
+        </div>
+      </div>
+
+      <!-- Sync toolbar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="font-size:13px;font-weight:600">Data Sources</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div id="sync-upload-btn" style="padding:6px 14px;font-size:11px;border-radius:6px;background:var(--accent);color:var(--bg);font-weight:600;cursor:pointer">Upload Excel</div>
+          <div id="sync-gear-btn" style="padding:6px 14px;font-size:11px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Settings</div>
+        </div>
+      </div>
+
+      <!-- Google Sheet Connection -->
+      <div id="sync-gsheet-panel" style="padding:16px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div>
+              <div style="font-size:12px;font-weight:600">Google Sheet Connected</div>
+              <div style="font-size:10px;color:var(--text-muted)">beacon-requirements — Requirements tab</div>
+            </div>
+          </div>
+          <div id="sync-toggle-indicator" style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+            <span style="font-size:10px;color:var(--green)">Sync Active</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="sync-timestamp" style="font-size:10px;color:var(--text-muted)">Last synced: 2 mins ago</div>
+          <div id="sync-now-btn" style="padding:4px 10px;font-size:10px;border-radius:4px;background:var(--bg-card);border:1px solid var(--border);color:var(--accent);cursor:pointer">Sync Now</div>
+        </div>
+      </div>
+
+      <!-- Upload Preview Modal Mock -->
+      <div id="sync-upload-preview" style="padding:16px">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600">Import Preview</div>
+            <div style="font-size:10px;color:var(--text-muted)">beacon-requirements.xlsx</div>
+          </div>
+
+          <!-- Summary bar -->
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <div style="padding:6px 12px;background:var(--bg-mid);border-radius:6px;flex:1;text-align:center">
+              <div style="font-size:16px;font-weight:700;color:var(--green)">58</div>
+              <div style="font-size:9px;color:var(--text-muted)">New</div>
+            </div>
+            <div style="padding:6px 12px;background:var(--bg-mid);border-radius:6px;flex:1;text-align:center">
+              <div style="font-size:16px;font-weight:700;color:var(--blue)">8</div>
+              <div style="font-size:9px;color:var(--text-muted)">Updated</div>
+            </div>
+            <div style="padding:6px 12px;background:var(--bg-mid);border-radius:6px;flex:1;text-align:center">
+              <div style="font-size:16px;font-weight:700;color:var(--text-muted)">0</div>
+              <div style="font-size:9px;color:var(--text-muted)">Skipped</div>
+            </div>
+            <div style="padding:6px 12px;background:var(--bg-mid);border-radius:6px;flex:1;text-align:center">
+              <div style="font-size:16px;font-weight:700;color:var(--amber)">0</div>
+              <div style="font-size:9px;color:var(--text-muted)">Warnings</div>
+            </div>
+          </div>
+
+          <!-- Preview table -->
+          <table class="mock-table" style="margin-bottom:12px">
+            <thead><tr><th>ID</th><th>Requirement</th><th>Action</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--accent)">R001</td><td>Fix provisioning flow</td><td><span class="badge badge-done">New</span></td><td style="font-size:10px;color:var(--green)">Ready</td></tr>
+              <tr><td style="color:var(--accent)">R002</td><td>Fix role model consistency</td><td><span class="badge badge-done">New</span></td><td style="font-size:10px;color:var(--green)">Ready</td></tr>
+              <tr><td style="color:var(--accent)">R010</td><td>Contacts table</td><td><span class="badge badge-progress">Update</span></td><td style="font-size:10px;color:var(--blue)">Changed: status</td></tr>
+              <tr><td style="color:var(--accent)">R011</td><td>Risk assessment templates</td><td><span class="badge badge-done">New</span></td><td style="font-size:10px;color:var(--green)">Ready</td></tr>
+            </tbody>
+          </table>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <div style="padding:6px 16px;font-size:11px;border-radius:6px;background:var(--bg-mid);border:1px solid var(--border);color:var(--text-muted);cursor:pointer">Cancel</div>
+            <div style="padding:6px 16px;font-size:11px;border-radius:6px;background:var(--accent);color:var(--bg);font-weight:600;cursor:pointer">Import 66 items</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload History -->
+      <div id="sync-history" style="padding:0 16px 16px 16px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">Upload History</div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:11px;font-weight:500">beacon-requirements.xlsx</div>
+              <div style="font-size:9px;color:var(--text-muted)">66 items imported · 0 errors</div>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted)">Today, 14:32</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:11px;font-weight:500">content-plan-v2.xlsx</div>
+              <div style="font-size:9px;color:var(--text-muted)">48 items imported · 0 errors</div>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted)">Yesterday, 09:15</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px">
+            <div>
+              <div style="font-size:11px;font-weight:500">beacon-requirements.xlsx</div>
+              <div style="font-size:9px;color:var(--text-muted)">60 items imported · 2 warnings</div>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted)">3 Apr, 11:20</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit source indicators -->
+      <div id="sync-indicators" style="padding:0 16px 16px 16px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">Edit Source Indicators</div>
+        <div style="display:flex;gap:12px">
+          <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style="font-size:10px;color:var(--green)">Via Google Sheet</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span style="font-size:10px;color:var(--purple)">Edited in Dashboard</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span style="font-size:10px;color:var(--blue)">Via Excel Upload</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Export Preview -->
+    <div id="preview-export" class="mock-page" style="display:none;position:relative">
+      <div class="mock-nav">
+        <div class="logo">B&L</div>
+        <div class="nav-items">
+          <div class="nav-item">Dashboard</div>
+          <div class="nav-item">Growth</div>
+          <div class="nav-item">Content</div>
+          <div class="nav-item active">Requirements</div>
+          <div class="nav-item">Analytics</div>
+        </div>
+      </div>
+
+      <!-- Export button area mock -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:600">Requirements — 66 items (18 filtered)</div>
+        <div id="export-btn-area" style="position:relative">
+          <div style="padding:6px 14px;font-size:11px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px" onclick="document.getElementById('export-dropdown').style.display=document.getElementById('export-dropdown').style.display==='block'?'none':'block'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div id="export-dropdown" style="display:block;position:absolute;right:0;top:34px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:4px;min-width:180px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
+            <div id="exp-xlsx" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='var(--bg-mid)'" onmouseout="this.style.background='transparent'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+              <div><div style="font-size:11px;font-weight:500">Excel (.xlsx)</div><div style="font-size:9px;color:var(--text-muted)">Working data with comments</div></div>
+            </div>
+            <div id="exp-csv" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='var(--bg-mid)'" onmouseout="this.style.background='transparent'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div><div style="font-size:11px;font-weight:500">CSV</div><div style="font-size:9px;color:var(--text-muted)">Universal flat format</div></div>
+            </div>
+            <div id="exp-pdf" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='var(--bg-mid)'" onmouseout="this.style.background='transparent'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div><div style="font-size:11px;font-weight:500">PDF Report</div><div style="font-size:9px;color:var(--text-muted)">Polished stakeholder format</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PDF Preview mock -->
+      <div style="padding:16px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:12px">PDF Report Preview</div>
+        <div style="background:#fff;border-radius:8px;padding:24px;color:#1a1a2e;max-width:500px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+          <!-- Cover -->
+          <div id="pdf-cover-preview" style="text-align:center;padding-bottom:16px;border-bottom:2px solid #53E9C5;margin-bottom:16px">
+            <div style="font-size:8px;color:#53E9C5;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Beacon & Ledger</div>
+            <div style="font-size:16px;font-weight:700;color:#0F1B35">Requirements Status Report</div>
+            <div style="font-size:10px;color:#666;margin-top:4px">8 April 2026 · Generated from B&L Dashboard</div>
+          </div>
+
+          <!-- Summary -->
+          <div id="pdf-summary-preview" style="margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:#0F1B35;margin-bottom:8px">Executive Summary</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <div style="flex:1;padding:6px;background:#f0fdf4;border-radius:4px;text-align:center"><div style="font-size:14px;font-weight:700;color:#16a34a">66</div><div style="font-size:8px;color:#666">Total</div></div>
+              <div style="flex:1;padding:6px;background:#fef2f2;border-radius:4px;text-align:center"><div style="font-size:14px;font-weight:700;color:#dc2626">18</div><div style="font-size:8px;color:#666">Critical</div></div>
+              <div style="flex:1;padding:6px;background:#fffbeb;border-radius:4px;text-align:center"><div style="font-size:14px;font-weight:700;color:#d97706">39</div><div style="font-size:8px;color:#666">High</div></div>
+              <div style="flex:1;padding:6px;background:#f0f9ff;border-radius:4px;text-align:center"><div style="font-size:14px;font-weight:700;color:#2563eb">0</div><div style="font-size:8px;color:#666">Done</div></div>
+            </div>
+          </div>
+
+          <!-- Phase breakdown -->
+          <div id="pdf-phase-preview" style="margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:#0F1B35;margin-bottom:8px">Phase Progress</div>
+            <div style="margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px"><span>Phase 0 — Fix Blockers</span><span style="color:#666">0%</span></div>
+              <div style="height:4px;background:#e5e7eb;border-radius:2px"><div style="height:100%;width:0%;background:#53E9C5;border-radius:2px"></div></div>
+            </div>
+            <div style="margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px"><span>Phase 1 — Data Model</span><span style="color:#666">0%</span></div>
+              <div style="height:4px;background:#e5e7eb;border-radius:2px"><div style="height:100%;width:0%;background:#53E9C5;border-radius:2px"></div></div>
+            </div>
+            <div style="margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px"><span>Phase 2 — Core UI</span><span style="color:#666">0%</span></div>
+              <div style="height:4px;background:#e5e7eb;border-radius:2px"><div style="height:100%;width:0%;background:#53E9C5;border-radius:2px"></div></div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div id="pdf-table-preview" style="margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:#0F1B35;margin-bottom:8px">Requirements Detail</div>
+            <table style="width:100%;border-collapse:collapse;font-size:8px">
+              <thead><tr style="background:#f8fafc"><th style="padding:4px 6px;text-align:left;border-bottom:1px solid #e5e7eb;color:#666">ID</th><th style="padding:4px 6px;text-align:left;border-bottom:1px solid #e5e7eb;color:#666">Requirement</th><th style="padding:4px 6px;text-align:left;border-bottom:1px solid #e5e7eb;color:#666">Priority</th><th style="padding:4px 6px;text-align:left;border-bottom:1px solid #e5e7eb;color:#666">Status</th></tr></thead>
+              <tbody>
+                <tr><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#53E9C5;font-weight:600">R001</td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9">Fix provisioning flow</td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9"><span style="color:#dc2626">Critical</span></td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9">Backlog</td></tr>
+                <tr><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#53E9C5;font-weight:600">R002</td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9">Fix role model consistency</td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9"><span style="color:#dc2626">Critical</span></td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9">Backlog</td></tr>
+                <tr><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#53E9C5;font-weight:600">R010</td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9">Contacts table</td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9"><span style="color:#dc2626">Critical</span></td><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9">In Progress</td></tr>
+              </tbody>
+            </table>
+            <div style="font-size:8px;color:#999;text-align:center;margin-top:4px">... showing 3 of 66 items</div>
+          </div>
+
+          <!-- Comments -->
+          <div id="pdf-comments-preview">
+            <div style="font-size:11px;font-weight:700;color:#0F1B35;margin-bottom:8px">Comments</div>
+            <div style="padding:6px 8px;background:#f8fafc;border-radius:4px;border-left:3px solid #53E9C5;margin-bottom:6px">
+              <div style="font-size:9px"><strong>R001</strong> — <span style="color:#53E9C5">Femi</span> <span style="color:#999">· 2 hours ago</span></div>
+              <div style="font-size:9px;margin-top:2px">This is blocking everything in Phase 1. Need to prioritise.</div>
+            </div>
+            <div style="padding:6px 8px;background:#f8fafc;border-radius:4px;border-left:3px solid #7C8CF8;margin-bottom:6px;margin-left:12px">
+              <div style="font-size:9px"><strong>R001</strong> — <span style="color:#7C8CF8">Claude Code</span> <span style="color:#999">· 1 hour ago</span></div>
+              <div style="font-size:9px;margin-top:2px">Agreed. I'll tackle this first — the ghost record issue needs a migration.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Output -->
+  <div class="prompt-area">
+    <h3>Design Summary</h3>
+    <div id="prompt-text" class="prompt-text"></div>
+    <button class="copy-btn" onclick="copyPrompt()">Copy Design Summary</button>
+  </div>
+</div>
+
+<script>
+  // State
+  const state = {};
+  document.querySelectorAll('.toggle-row').forEach(row => {
+    state[row.dataset.key] = row.classList.contains('active');
+  });
+
+  let currentPage = 'requirements';
+  let currentReqView = 'table';
+  let currentCalView = 'table';
+
+  function toggle(el) {
+    const key = el.dataset.key;
+    el.classList.toggle('active');
+    state[key] = el.classList.contains('active');
+    updateAll();
+  }
+
+  function switchPage(page, tab) {
+    currentPage = page;
+    document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('preview-requirements').style.display = page === 'requirements' ? 'block' : 'none';
+    document.getElementById('preview-content').style.display = page === 'content' ? 'block' : 'none';
+    document.getElementById('preview-sync').style.display = page === 'sync' ? 'block' : 'none';
+    document.getElementById('preview-export').style.display = page === 'export' ? 'block' : 'none';
+  }
+
+  function switchReqView(view, btn) {
+    currentReqView = view;
+    document.querySelectorAll('#preview-requirements .mock-view').forEach(v => v.style.display = 'none');
+    const target = document.getElementById('req-view-' + view);
+    if (target) target.style.display = 'block';
+    document.querySelectorAll('#req-views .view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function switchCalView(view, btn) {
+    currentCalView = view;
+    document.querySelectorAll('#preview-content .mock-view').forEach(v => v.style.display = 'none');
+    const target = document.getElementById('cal-view-' + view);
+    if (target) target.style.display = 'block';
+    document.querySelectorAll('#cal-views .view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function updateAll() {
+    // Requirements page visibility
+    document.getElementById('req-kpi').style.display = state.req_kpi ? 'flex' : 'none';
+    document.getElementById('req-phases').style.display = state.req_phases ? 'flex' : 'none';
+    document.getElementById('req-filters').style.display = state.req_filters ? 'flex' : 'none';
+
+    // Update view buttons
+    const reqViews = document.querySelectorAll('#req-views .view-btn');
+    reqViews.forEach(btn => {
+      const view = btn.dataset.view;
+      const keyMap = { table: 'req_table', kanban: 'req_kanban', calendar: 'req_calendar', deps: 'req_deps' };
+      btn.style.display = state[keyMap[view]] ? 'block' : 'none';
+    });
+
+    const calViews = document.querySelectorAll('#cal-views .view-btn');
+    calViews.forEach(btn => {
+      const view = btn.dataset.view;
+      const keyMap = { table: 'cal_table', calendar: 'cal_calendar', kanban: 'cal_kanban' };
+      btn.style.display = state[keyMap[view]] ? 'block' : 'none';
+    });
+
+    // Detail panel
+    const reqDetail = document.getElementById('req-detail');
+    if (!state.req_detail) reqDetail.classList.remove('visible');
+
+    // Comments visibility
+    document.getElementById('detail-comments').style.display = state.comments_req ? 'block' : 'none';
+    document.getElementById('cal-detail-comments').style.display = state.comments_cal ? 'block' : 'none';
+
+    // Content calendar features
+    document.getElementById('cal-kpi').style.display = state.cal_kpi ? 'flex' : 'none';
+    document.getElementById('cal-filters-bar').style.display = state.cal_filters ? 'flex' : 'none';
+
+    // Upload & Sync visibility
+    const uploadBtn = document.getElementById('sync-upload-btn');
+    const gsheetPanel = document.getElementById('sync-gsheet-panel');
+    const uploadPreview = document.getElementById('sync-upload-preview');
+    const syncHistory = document.getElementById('sync-history');
+    const syncIndicators = document.getElementById('sync-indicators');
+    const syncGearBtn = document.getElementById('sync-gear-btn');
+    const syncNowBtn = document.getElementById('sync-now-btn');
+    const syncTimestamp = document.getElementById('sync-timestamp');
+    const syncToggle = document.getElementById('sync-toggle-indicator');
+
+    if (uploadBtn) uploadBtn.style.display = state.sync_upload ? 'block' : 'none';
+    if (gsheetPanel) gsheetPanel.style.display = state.sync_gsheet ? 'block' : 'none';
+    if (uploadPreview) uploadPreview.style.display = (state.sync_upload && state.upload_preview) ? 'block' : 'none';
+    if (syncHistory) syncHistory.style.display = state.upload_history ? 'block' : 'none';
+    if (syncIndicators) syncIndicators.style.display = state.conflict_indicator ? 'block' : 'none';
+    if (syncGearBtn) syncGearBtn.style.display = state.gsheet_settings ? 'flex' : 'none';
+    if (syncNowBtn) syncNowBtn.style.display = state.gsheet_manual ? 'block' : 'none';
+    if (syncTimestamp) syncTimestamp.style.display = state.gsheet_timestamp ? 'block' : 'none';
+    if (syncToggle) syncToggle.style.display = state.gsheet_toggle ? 'flex' : 'none';
+
+    // Export visibility
+    const expXlsx = document.getElementById('exp-xlsx');
+    const expCsv = document.getElementById('exp-csv');
+    const expPdf = document.getElementById('exp-pdf');
+    const pdfCover = document.getElementById('pdf-cover-preview');
+    const pdfSummary = document.getElementById('pdf-summary-preview');
+    const pdfTable = document.getElementById('pdf-table-preview');
+    const pdfPhase = document.getElementById('pdf-phase-preview');
+    const pdfComments = document.getElementById('pdf-comments-preview');
+    const exportBtnArea = document.getElementById('export-btn-area');
+
+    if (expXlsx) expXlsx.style.display = state.export_xlsx ? 'flex' : 'none';
+    if (expCsv) expCsv.style.display = state.export_csv ? 'flex' : 'none';
+    if (expPdf) expPdf.style.display = state.export_pdf ? 'flex' : 'none';
+    if (pdfCover) pdfCover.style.display = state.pdf_cover ? 'block' : 'none';
+    if (pdfSummary) pdfSummary.style.display = state.pdf_summary ? 'block' : 'none';
+    if (pdfTable) pdfTable.style.display = state.pdf_table ? 'block' : 'none';
+    if (pdfPhase) pdfPhase.style.display = state.pdf_phase_breakdown ? 'block' : 'none';
+    if (pdfComments) pdfComments.style.display = state.pdf_comments ? 'block' : 'none';
+    if (exportBtnArea) exportBtnArea.style.display = state.export_button_page ? 'block' : 'none';
+
+    updatePrompt();
+  }
+
+  function updatePrompt() {
+    const parts = [];
+
+    // Requirements page
+    const reqViews = [];
+    if (state.req_table) reqViews.push('table');
+    if (state.req_kanban) reqViews.push('kanban');
+    if (state.req_calendar) reqViews.push('calendar');
+    if (state.req_deps) reqViews.push('dependency map');
+
+    if (reqViews.length) {
+      parts.push(`**Requirements Page** (/requirements):`);
+      parts.push(`- Views: ${reqViews.join(', ')}`);
+
+      const reqFeatures = [];
+      if (state.req_kpi) reqFeatures.push('KPI bar');
+      if (state.req_phases) reqFeatures.push('phase progress cards');
+      if (state.req_filters) reqFeatures.push('filter bar');
+      if (state.req_detail) reqFeatures.push('detail panel');
+      if (state.req_bulk) reqFeatures.push('bulk actions');
+      if (state.req_inline_edit) reqFeatures.push('inline editing');
+      if (state.critical_path) reqFeatures.push('critical path highlighting');
+      if (reqFeatures.length) parts.push(`- Features: ${reqFeatures.join(', ')}`);
+    }
+
+    // Content calendar
+    const calViews = [];
+    if (state.cal_table) calViews.push('table');
+    if (state.cal_calendar) calViews.push('calendar');
+    if (state.cal_kanban) calViews.push('kanban');
+
+    if (calViews.length) {
+      parts.push('');
+      parts.push(`**Content Calendar** (new tab in /content):`);
+      parts.push(`- Views: ${calViews.join(', ')}`);
+
+      const calFeatures = [];
+      if (state.cal_inline_draft) calFeatures.push('inline drafting');
+      if (state.cal_studio) calFeatures.push('Open in Studio integration');
+      if (state.cal_drag_reschedule) calFeatures.push('drag-to-reschedule');
+      if (state.cal_kpi) calFeatures.push('KPI bar');
+      if (state.cal_filters) calFeatures.push('filters');
+      if (state.cal_pillar_colors) calFeatures.push('pillar color coding');
+      if (calFeatures.length) parts.push(`- Features: ${calFeatures.join(', ')}`);
+    }
+
+    // Comments
+    const commentTargets = [];
+    if (state.comments_req) commentTargets.push('requirements');
+    if (state.comments_cal) commentTargets.push('content calendar');
+    if (commentTargets.length) {
+      parts.push('');
+      parts.push(`**Comments:** Threaded${state.comments_threaded ? ' with replies' : ''} on ${commentTargets.join(' and ')}`);
+    }
+
+    // Export
+    const exportFormats = [];
+    if (state.export_xlsx) exportFormats.push('Excel');
+    if (state.export_csv) exportFormats.push('CSV');
+    if (state.export_pdf) exportFormats.push('PDF');
+    if (exportFormats.length) {
+      parts.push(`**Export:** ${exportFormats.join(', ')}`);
+    }
+
+    // Sync
+    const syncMethods = [];
+    if (state.sync_gsheet) syncMethods.push('Google Sheets real-time sync (Supabase Edge Function + Apps Script)');
+    if (state.sync_upload) syncMethods.push('Excel upload fallback');
+    if (state.sync_seed) syncMethods.push('seed from existing file');
+    if (syncMethods.length) {
+      parts.push(`**Data Sync:** ${syncMethods.join(', ')}`);
+    }
+
+    // Upload features
+    const uploadFeatures = [];
+    if (state.upload_preview) uploadFeatures.push('import preview with validation');
+    if (state.upload_upsert) uploadFeatures.push('smart upsert by ref_id');
+    if (state.upload_history) uploadFeatures.push('upload history log');
+    if (uploadFeatures.length) {
+      parts.push(`- Upload: ${uploadFeatures.join(', ')}`);
+    }
+
+    // Google Sheet features
+    const gsheetFeatures = [];
+    if (state.gsheet_settings) gsheetFeatures.push('settings panel');
+    if (state.gsheet_schedule) gsheetFeatures.push('scheduled polling (5 min)');
+    if (state.gsheet_realtime) gsheetFeatures.push('real-time push via Apps Script');
+    if (state.gsheet_manual) gsheetFeatures.push('Sync Now button');
+    if (state.gsheet_timestamp) gsheetFeatures.push('last synced indicator');
+    if (state.gsheet_toggle) gsheetFeatures.push('on/off toggle per entity');
+    if (gsheetFeatures.length) {
+      parts.push(`- Google Sheets: ${gsheetFeatures.join(', ')}`);
+    }
+
+    // Conflict handling
+    const conflictFeatures = [];
+    if (state.conflict_sheet_wins) conflictFeatures.push('Google Sheet as source of truth');
+    if (state.conflict_indicator) conflictFeatures.push('edit source indicator (sync vs manual vs upload)');
+    if (conflictFeatures.length) {
+      parts.push(`- Conflicts: ${conflictFeatures.join(', ')}`);
+    }
+
+    // Export details
+    const xlsxFeatures = [];
+    if (state.export_xlsx_filters) xlsxFeatures.push('respects active filters');
+    if (state.export_xlsx_comments) xlsxFeatures.push('includes comments');
+    if (xlsxFeatures.length) {
+      parts.push(`- Excel options: ${xlsxFeatures.join(', ')}`);
+    }
+
+    const pdfSections = [];
+    if (state.pdf_cover) pdfSections.push('cover page');
+    if (state.pdf_summary) pdfSections.push('executive summary');
+    if (state.pdf_table) pdfSections.push('full item table');
+    if (state.pdf_phase_breakdown) pdfSections.push('phase breakdown');
+    if (state.pdf_comments) pdfSections.push('comments');
+    if (pdfSections.length) {
+      parts.push(`- PDF sections: ${pdfSections.join(', ')}`);
+    }
+
+    const exportUx = [];
+    if (state.export_button_page) exportUx.push('visible export button on page');
+    if (state.export_format_picker) exportUx.push('format picker dropdown');
+    if (exportUx.length) {
+      parts.push(`- Export UX: ${exportUx.join(', ')}`);
+    }
+
+    document.getElementById('prompt-text').innerHTML = parts.join('\n');
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('prompt-text').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy Design Summary'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // Click table rows to show detail panels
+  document.querySelectorAll('#req-view-table .mock-table tbody tr').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => {
+      if (state.req_detail) document.getElementById('req-detail').classList.add('visible');
+    });
+  });
+  document.querySelectorAll('#cal-view-table .mock-table tbody tr').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => {
+      document.getElementById('cal-detail').classList.add('visible');
+    });
+  });
+
+  // Kanban card clicks
+  document.querySelectorAll('#req-view-kanban .kanban-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => {
+      if (state.req_detail) document.getElementById('req-detail').classList.add('visible');
+    });
+  });
+  document.querySelectorAll('#cal-view-kanban .kanban-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => {
+      document.getElementById('cal-detail').classList.add('visible');
+    });
+  });
+
+  // Initial render
+  updateAll();
+</script>
+</body>
+</html>
