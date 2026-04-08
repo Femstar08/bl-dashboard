@@ -351,9 +351,66 @@ export default function RequirementsPage() {
           />
         </div>
         {selectedIds.length > 0 && (
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            {selectedIds.length} selected
-          </span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px',
+            background: 'var(--bg-card)', border: '1px solid var(--accent)',
+            borderRadius: 8,
+          }}>
+            <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>
+              {selectedIds.length} selected
+            </span>
+            <select
+              onChange={async (e) => {
+                const newStatus = e.target.value
+                if (!newStatus) return
+                for (const id of selectedIds) {
+                  await onUpdate(id, { status: newStatus as Requirement['status'] })
+                }
+                setSelectedIds([])
+              }}
+              defaultValue=""
+              style={{
+                padding: '4px 8px', fontSize: 11, background: 'var(--bg-mid)',
+                border: '1px solid var(--border)', borderRadius: 6,
+                color: 'var(--text-primary)', fontFamily: 'inherit',
+                cursor: 'pointer', outline: 'none',
+              }}
+            >
+              <option value="">Update Status...</option>
+              {REQ_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select
+              onChange={async (e) => {
+                const newPriority = e.target.value
+                if (!newPriority) return
+                for (const id of selectedIds) {
+                  await onUpdate(id, { priority: newPriority as Requirement['priority'] })
+                }
+                setSelectedIds([])
+              }}
+              defaultValue=""
+              style={{
+                padding: '4px 8px', fontSize: 11, background: 'var(--bg-mid)',
+                border: '1px solid var(--border)', borderRadius: 6,
+                color: 'var(--text-primary)', fontFamily: 'inherit',
+                cursor: 'pointer', outline: 'none',
+              }}
+            >
+              <option value="">Update Priority...</option>
+              {REQ_PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button
+              onClick={() => setSelectedIds([])}
+              style={{
+                padding: '4px 10px', fontSize: 10, background: 'transparent',
+                border: '1px solid var(--border)', borderRadius: 6,
+                color: 'var(--text-muted)', cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Clear selection
+            </button>
+          </div>
         )}
       </div>
 

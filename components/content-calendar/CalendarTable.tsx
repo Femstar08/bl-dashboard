@@ -100,6 +100,7 @@ export default function CalendarTable({ items, onSelect, onUpdate }: CalendarTab
             <th style={thStyle} onClick={() => handleSort('status')}>
               Status{sortIndicator('status')}
             </th>
+            <th style={{ ...thStyle, cursor: 'default', width: 32 }} />
           </tr>
         </thead>
         <tbody>
@@ -177,12 +178,23 @@ export default function CalendarTable({ items, onSelect, onUpdate }: CalendarTab
                   ))}
                 </select>
               </td>
+              <td style={{ ...tdStyle, width: 32 }}>
+                <div
+                  title={item.source === 'sync' ? 'Via Google Sheet' : item.source === 'upload' ? 'Via Excel Upload' : 'Edited in Dashboard'}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: item.source === 'sync' ? '#34D399' : item.source === 'upload' ? '#60a5fa' : '#7C8CF8',
+                  }}
+                />
+              </td>
             </tr>
           ))}
           {sorted.length === 0 && (
             <tr>
               <td
-                colSpan={7}
+                colSpan={8}
                 style={{
                   ...tdStyle,
                   textAlign: 'center',

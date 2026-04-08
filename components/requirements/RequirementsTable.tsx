@@ -151,6 +151,7 @@ export default function RequirementsTable({
             <th style={thStyle} onClick={() => handleSort('assigned_to')}>
               Assigned{sortIndicator('assigned_to')}
             </th>
+            <th style={{ ...thStyle, cursor: 'default', width: 32 }} />
           </tr>
         </thead>
         <tbody>
@@ -243,12 +244,23 @@ export default function RequirementsTable({
                 <td style={{ ...tdStyle, color: 'var(--text-muted)', fontSize: 11 }}>
                   {item.assigned_to || '\u2014'}
                 </td>
+                <td style={{ ...tdStyle, width: 32 }}>
+                  <div
+                    title={item.source === 'sync' ? 'Via Google Sheet' : item.source === 'upload' ? 'Via Excel Upload' : 'Edited in Dashboard'}
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: item.source === 'sync' ? '#34D399' : item.source === 'upload' ? '#60a5fa' : '#7C8CF8',
+                    }}
+                  />
+                </td>
               </tr>
             )
           })}
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={8} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', padding: '24px 12px' }}>
+              <td colSpan={9} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', padding: '24px 12px' }}>
                 No requirements found
               </td>
             </tr>
