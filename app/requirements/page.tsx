@@ -15,6 +15,7 @@ import RequirementsTable from '@/components/requirements/RequirementsTable'
 import RequirementsKanban from '@/components/requirements/RequirementsKanban'
 import PhaseCards from '@/components/requirements/PhaseCards'
 import RequirementDetail from '@/components/requirements/RequirementDetail'
+import RequirementsCalendar from '@/components/requirements/RequirementsCalendar'
 
 const VIEW_OPTIONS = [
   {
@@ -347,6 +348,12 @@ export default function RequirementsPage() {
           items={filteredItems}
           onSelect={setSelectedItem}
           onUpdate={onUpdate}
+        />
+      ) : currentView === 'calendar' ? (
+        <RequirementsCalendar
+          items={filteredItems}
+          phases={phases}
+          onSelect={setSelectedItem}
         />
       ) : (
         <div style={{
