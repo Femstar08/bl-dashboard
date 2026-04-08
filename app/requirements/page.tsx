@@ -12,6 +12,8 @@ import KpiBar from '@/components/shared/KpiBar'
 import ViewToggle from '@/components/shared/ViewToggle'
 import FilterBar from '@/components/shared/FilterBar'
 import RequirementsTable from '@/components/requirements/RequirementsTable'
+import RequirementsKanban from '@/components/requirements/RequirementsKanban'
+import PhaseCards from '@/components/requirements/PhaseCards'
 import RequirementDetail from '@/components/requirements/RequirementDetail'
 
 const VIEW_OPTIONS = [
@@ -74,6 +76,7 @@ export default function RequirementsPage() {
   const [selectedItem, setSelectedItem] = useState<Requirement | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [currentView, setCurrentView] = useState('table')
+  const [activePhase, setActivePhase] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchRequirements = useCallback(async () => {
@@ -162,6 +165,8 @@ export default function RequirementsPage() {
   // Filter logic
   const filteredItems = useMemo(() => {
     return requirements.filter(item => {
+      // Phase card filter
+      if (activePhase && item.phase !== activePhase) return false
       for (const [key, values] of Object.entries(activeFilters)) {
         if (values.length === 0) continue
         const itemVal = String((item as unknown as Record<string, unknown>)[key] ?? '')
@@ -169,7 +174,7 @@ export default function RequirementsPage() {
       }
       return true
     })
-  }, [requirements, activeFilters])
+  }, [requirements, activeFilters, activePhase])
 
   // Derive filter options
   const filterDefs = useMemo(() => {
@@ -289,6 +294,14 @@ export default function RequirementsPage() {
       {/* KPI Bar */}
       <KpiBar items={kpis} />
 
+      {/* Phase Cards */}
+      <PhaseCards
+        phases={phases}
+        requirements={requirements}
+        activePhase={activePhase}
+        onPhaseClick={setActivePhase}
+      />
+
       {/* View Toggle + Filter Bar */}
       <div style={{
         display: 'flex',
@@ -328,6 +341,12 @@ export default function RequirementsPage() {
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           onSelectAll={handleSelectAll}
+        />
+      ) : currentView === 'kanban' ? (
+        <RequirementsKanban
+          items={filteredItems}
+          onSelect={setSelectedItem}
+          onUpdate={onUpdate}
         />
       ) : (
         <div style={{
