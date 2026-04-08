@@ -18,6 +18,7 @@ import RequirementDetail from '@/components/requirements/RequirementDetail'
 import RequirementsCalendar from '@/components/requirements/RequirementsCalendar'
 import RequirementsDeps from '@/components/requirements/RequirementsDeps'
 import UploadButton from '@/components/shared/UploadButton'
+import ExportButton from '@/components/shared/ExportButton'
 
 const VIEW_OPTIONS = [
   {
@@ -275,6 +276,24 @@ export default function RequirementsPage() {
               Seed Data
             </button>
           )}
+          <ExportButton
+            data={filteredItems}
+            columns={[
+              { key: 'ref_id', label: 'ID' },
+              { key: 'phase', label: 'Phase' },
+              { key: 'domain', label: 'Domain' },
+              { key: 'requirement', label: 'Requirement' },
+              { key: 'priority', label: 'Priority' },
+              { key: 'status', label: 'Status' },
+              { key: 'complexity', label: 'Complexity' },
+              { key: 'assigned_to', label: 'Assigned' },
+            ]}
+            filename="requirements-export"
+            title="Requirements Status Report"
+            comments={comments}
+            phases={phases}
+            entityType="requirement"
+          />
           <UploadButton entityType="requirement" onImportComplete={fetchRequirements} />
           <button
             onClick={onCreate}

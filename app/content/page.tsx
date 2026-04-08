@@ -12,6 +12,7 @@ import ViewToggle from '@/components/shared/ViewToggle'
 import KpiBar from '@/components/shared/KpiBar'
 import FilterBar from '@/components/shared/FilterBar'
 import UploadButton from '@/components/shared/UploadButton'
+import ExportButton from '@/components/shared/ExportButton'
 import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, X, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
 
 const AMBER = '#F59E0B'
@@ -994,6 +995,22 @@ export default function ContentPage() {
                 />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ExportButton
+                  data={filteredCalendarItems}
+                  columns={[
+                    { key: 'week', label: 'Week' },
+                    { key: 'publish_date', label: 'Date' },
+                    { key: 'day', label: 'Day' },
+                    { key: 'channel', label: 'Channel' },
+                    { key: 'pillar', label: 'Pillar' },
+                    { key: 'topic', label: 'Topic' },
+                    { key: 'status', label: 'Status' },
+                  ]}
+                  filename="content-calendar-export"
+                  title="Content Calendar Report"
+                  comments={calendarComments}
+                  entityType="content_calendar"
+                />
                 <UploadButton entityType="content_calendar" onImportComplete={loadCalendarItems} />
                 <button
                   onClick={calCreate}
