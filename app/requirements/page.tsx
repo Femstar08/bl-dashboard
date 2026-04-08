@@ -17,6 +17,7 @@ import PhaseCards from '@/components/requirements/PhaseCards'
 import RequirementDetail from '@/components/requirements/RequirementDetail'
 import RequirementsCalendar from '@/components/requirements/RequirementsCalendar'
 import RequirementsDeps from '@/components/requirements/RequirementsDeps'
+import UploadButton from '@/components/shared/UploadButton'
 
 const VIEW_OPTIONS = [
   {
@@ -274,6 +275,7 @@ export default function RequirementsPage() {
               Seed Data
             </button>
           )}
+          <UploadButton entityType="requirement" onImportComplete={fetchRequirements} />
           <button
             onClick={onCreate}
             style={{

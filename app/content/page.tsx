@@ -11,6 +11,7 @@ import CalendarDetail from '@/components/content-calendar/CalendarDetail'
 import ViewToggle from '@/components/shared/ViewToggle'
 import KpiBar from '@/components/shared/KpiBar'
 import FilterBar from '@/components/shared/FilterBar'
+import UploadButton from '@/components/shared/UploadButton'
 import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, X, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
 
 const AMBER = '#F59E0B'
@@ -992,25 +993,28 @@ export default function ContentPage() {
                   onClearAll={() => setCalFilters({})}
                 />
               </div>
-              <button
-                onClick={calCreate}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 16px',
-                  background: 'var(--accent)',
-                  color: 'var(--bg-primary)',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                <Plus size={14} /> Add Post
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <UploadButton entityType="content_calendar" onImportComplete={loadCalendarItems} />
+                <button
+                  onClick={calCreate}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 16px',
+                    background: 'var(--accent)',
+                    color: 'var(--bg-primary)',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <Plus size={14} /> Add Post
+                </button>
+              </div>
             </div>
 
             {/* Main view */}
