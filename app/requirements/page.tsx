@@ -19,6 +19,7 @@ import RequirementsCalendar from '@/components/requirements/RequirementsCalendar
 import RequirementsDeps from '@/components/requirements/RequirementsDeps'
 import UploadButton from '@/components/shared/UploadButton'
 import ExportButton from '@/components/shared/ExportButton'
+import SyncSettings from '@/components/shared/SyncSettings'
 
 const VIEW_OPTIONS = [
   {
@@ -295,6 +296,7 @@ export default function RequirementsPage() {
             entityType="requirement"
           />
           <UploadButton entityType="requirement" onImportComplete={fetchRequirements} />
+          <SyncSettings entityType="requirement" onSyncComplete={fetchRequirements} />
           <button
             onClick={onCreate}
             style={{

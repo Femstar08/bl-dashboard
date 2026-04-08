@@ -13,6 +13,7 @@ import KpiBar from '@/components/shared/KpiBar'
 import FilterBar from '@/components/shared/FilterBar'
 import UploadButton from '@/components/shared/UploadButton'
 import ExportButton from '@/components/shared/ExportButton'
+import SyncSettings from '@/components/shared/SyncSettings'
 import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, X, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
 
 const AMBER = '#F59E0B'
@@ -1012,6 +1013,7 @@ export default function ContentPage() {
                   entityType="content_calendar"
                 />
                 <UploadButton entityType="content_calendar" onImportComplete={loadCalendarItems} />
+                <SyncSettings entityType="content_calendar" onSyncComplete={loadCalendarItems} />
                 <button
                   onClick={calCreate}
                   style={{
