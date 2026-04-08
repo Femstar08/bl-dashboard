@@ -5,6 +5,8 @@ import type { ContentCalendarItem, Comment } from '@/lib/types-requirements'
 import { CAL_STATUSES, CAL_STATUS_COLORS } from '@/lib/types-requirements'
 import { SEED_CONTENT_CALENDAR } from '@/lib/seed-data'
 import CalendarTable from '@/components/content-calendar/CalendarTable'
+import CalendarGrid from '@/components/content-calendar/CalendarGrid'
+import CalendarKanban from '@/components/content-calendar/CalendarKanban'
 import CalendarDetail from '@/components/content-calendar/CalendarDetail'
 import ViewToggle from '@/components/shared/ViewToggle'
 import KpiBar from '@/components/shared/KpiBar'
@@ -1020,13 +1022,19 @@ export default function ContentPage() {
                 onSelect={setCalSelectedItem}
                 onUpdate={calUpdate}
               />
-            ) : (
-              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-                <Calendar size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-                <p style={{ fontSize: 14 }}>{calView === 'calendar' ? 'Calendar' : 'Kanban'} view coming soon</p>
-                <p style={{ fontSize: 12, marginTop: 6 }}>Switch to Table view to manage posts</p>
-              </div>
-            )}
+            ) : calView === 'calendar' ? (
+              <CalendarGrid
+                items={filteredCalendarItems}
+                onSelect={setCalSelectedItem}
+                onUpdate={calUpdate}
+              />
+            ) : calView === 'kanban' ? (
+              <CalendarKanban
+                items={filteredCalendarItems}
+                onSelect={setCalSelectedItem}
+                onUpdate={calUpdate}
+              />
+            ) : null}
 
             {/* Seed button if no items */}
             {!calLoading && calendarItems.length === 0 && (
