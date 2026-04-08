@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/growth', label: 'Growth' },
   { href: '/content', label: 'Content' },
   { href: '/prospects', label: 'Prospects' },
+  { href: '/requirements', label: 'Requirements' },
   { href: '/analytics', label: 'Analytics' },
   { href: '/angel', label: 'Angel' },
   { href: '/agents', label: 'Agents' },
