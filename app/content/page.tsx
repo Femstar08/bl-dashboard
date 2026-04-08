@@ -1,6 +1,14 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase, type NewsSource, type IncomingArticle } from '@/lib/supabase'
+import type { ContentCalendarItem, Comment } from '@/lib/types-requirements'
+import { CAL_STATUSES, CAL_STATUS_COLORS } from '@/lib/types-requirements'
+import { SEED_CONTENT_CALENDAR } from '@/lib/seed-data'
+import CalendarTable from '@/components/content-calendar/CalendarTable'
+import CalendarDetail from '@/components/content-calendar/CalendarDetail'
+import ViewToggle from '@/components/shared/ViewToggle'
+import KpiBar from '@/components/shared/KpiBar'
+import FilterBar from '@/components/shared/FilterBar'
 import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, X, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
 
 const AMBER = '#F59E0B'
@@ -717,8 +725,164 @@ function ScheduledTab() {
 
 // ── ROOT PAGE ─────────────────────────────────────────────────
 export default function ContentPage() {
-  const [tab, setTab] = useState<'queue'|'studio'|'scheduled'|'sources'>('queue')
+  const [tab, setTab] = useState<'queue'|'studio'|'scheduled'|'sources'|'calendar'>('queue')
   const [studioArticle, setStudioArticle] = useState<IncomingArticle | null>(null)
+
+  // Calendar tab state
+  const [calendarItems, setCalendarItems] = useState<ContentCalendarItem[]>([])
+  const [calendarComments, setCalendarComments] = useState<Comment[]>([])
+  const [calFilters, setCalFilters] = useState<Record<string, string[]>>({})
+  const [calSelectedItem, setCalSelectedItem] = useState<ContentCalendarItem | null>(null)
+  const [calView, setCalView] = useState('table')
+  const [calLoading, setCalLoading] = useState(false)
+
+  // Calendar data fetching
+  const loadCalendarItems = useCallback(async () => {
+    setCalLoading(true)
+    const { data } = await supabase
+      .from('bl_content_calendar')
+      .select('*')
+      .order('publish_date')
+    if (data) setCalendarItems(data)
+    setCalLoading(false)
+  }, [])
+
+  const loadCalendarComments = useCallback(async () => {
+    const { data } = await supabase
+      .from('bl_comments')
+      .select('*')
+      .eq('entity_type', 'content_calendar')
+    if (data) setCalendarComments(data)
+  }, [])
+
+  useEffect(() => {
+    if (tab === 'calendar') {
+      loadCalendarItems()
+      loadCalendarComments()
+    }
+  }, [tab, loadCalendarItems, loadCalendarComments])
+
+  // Calendar CRUD
+  const calUpdate = useCallback(async (id: string, updates: Partial<ContentCalendarItem>) => {
+    await supabase.from('bl_content_calendar').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
+    setCalendarItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item))
+    if (calSelectedItem?.id === id) {
+      setCalSelectedItem(prev => prev ? { ...prev, ...updates } : prev)
+    }
+  }, [calSelectedItem])
+
+  const calDelete = useCallback(async (id: string) => {
+    await supabase.from('bl_content_calendar').delete().eq('id', id)
+    setCalendarItems(prev => prev.filter(item => item.id !== id))
+    if (calSelectedItem?.id === id) setCalSelectedItem(null)
+  }, [calSelectedItem])
+
+  const calCreate = useCallback(async () => {
+    const now = new Date().toISOString()
+    const { data } = await supabase.from('bl_content_calendar').insert({
+      week: 1,
+      publish_date: new Date().toISOString().split('T')[0],
+      day: new Date().toLocaleDateString('en-GB', { weekday: 'long' }),
+      channel: 'LinkedIn Post',
+      format: 'Text Post',
+      pillar: '',
+      topic: 'New post',
+      key_message: null,
+      cta: null,
+      script_draft: null,
+      status: 'To Draft',
+      performance: null,
+      notes: null,
+      source: 'manual',
+      created_at: now,
+      updated_at: now,
+    }).select().single()
+    if (data) {
+      setCalendarItems(prev => [...prev, data])
+      setCalSelectedItem(data)
+    }
+  }, [])
+
+  const calSeed = useCallback(async () => {
+    const now = new Date().toISOString()
+    const rows = SEED_CONTENT_CALENDAR.map(item => ({
+      ...item,
+      created_at: now,
+      updated_at: now,
+    }))
+    const { data } = await supabase.from('bl_content_calendar').insert(rows).select()
+    if (data) setCalendarItems(data)
+  }, [])
+
+  // Calendar filter logic
+  const calFilterDefs = useMemo(() => {
+    const weeks = Array.from(new Set(calendarItems.map(i => String(i.week)))).sort()
+    const pillars = Array.from(new Set(calendarItems.map(i => i.pillar))).filter(Boolean).sort()
+    const channels = Array.from(new Set(calendarItems.map(i => i.channel))).filter(Boolean).sort()
+    const formats = Array.from(new Set(calendarItems.map(i => i.format))).filter(Boolean).sort()
+    const statuses = Array.from(new Set(calendarItems.map(i => i.status))).sort()
+    return [
+      { key: 'week', label: 'Week', options: weeks },
+      { key: 'pillar', label: 'Pillar', options: pillars },
+      { key: 'channel', label: 'Channel', options: channels },
+      { key: 'format', label: 'Format', options: formats },
+      { key: 'status', label: 'Status', options: statuses },
+    ]
+  }, [calendarItems])
+
+  const filteredCalendarItems = useMemo(() => {
+    return calendarItems.filter(item => {
+      for (const [key, values] of Object.entries(calFilters)) {
+        if (values.length === 0) continue
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const itemVal = key === 'week' ? String(item.week) : String((item as any)[key] ?? '')
+        if (!values.includes(itemVal)) return false
+      }
+      return true
+    })
+  }, [calendarItems, calFilters])
+
+  // Calendar KPIs
+  const calKpis = useMemo(() => {
+    const total = calendarItems.length
+    const counts: Record<string, number> = {}
+    CAL_STATUSES.forEach(s => { counts[s] = 0 })
+    calendarItems.forEach(item => { counts[item.status] = (counts[item.status] || 0) + 1 })
+    return [
+      { label: 'Total Posts', value: total, color: 'var(--accent)' },
+      ...CAL_STATUSES.map(s => ({
+        label: s,
+        value: counts[s],
+        color: CAL_STATUS_COLORS[s],
+      })),
+    ]
+  }, [calendarItems])
+
+  // Open in Studio handler
+  const handleOpenInStudio = useCallback((calItem: ContentCalendarItem) => {
+    // Create a synthetic article from the calendar item to pre-fill the studio
+    const syntheticArticle: IncomingArticle = {
+      id: calItem.id,
+      source_id: null,
+      original_title: calItem.topic,
+      original_url: `calendar://${calItem.id}`,
+      original_excerpt: calItem.key_message || null,
+      ai_summary: calItem.key_message || null,
+      ai_key_points: null,
+      ai_rewrite: calItem.script_draft || null,
+      profile_target: null,
+      status: 'Fetched',
+      fetched_at: calItem.created_at,
+      created_at: calItem.created_at,
+      scheduled_at: null,
+      posted_at: null,
+      linkedin_post_id: null,
+      previous_post_context: null,
+    }
+    setStudioArticle(syntheticArticle)
+    setCalSelectedItem(null)
+    setTab('studio')
+  }, [])
 
   function handleApprove(article: IncomingArticle) {
     setStudioArticle(article)
@@ -740,6 +904,7 @@ export default function ContentPage() {
     { key: 'studio',    label: 'Draft studio',   icon: <Zap size={14} /> },
     { key: 'scheduled', label: 'Scheduled',      icon: <Calendar size={14} /> },
     { key: 'sources',   label: 'Sources',        icon: <ExternalLink size={14} /> },
+    { key: 'calendar',  label: 'Calendar',       icon: <Calendar size={14} /> },
   ]
 
   return (
@@ -767,6 +932,137 @@ export default function ContentPage() {
         {tab === 'studio'    && <StudioTab article={studioArticle} onScheduled={handleScheduled} />}
         {tab === 'scheduled' && <ScheduledTab />}
         {tab === 'sources'   && <SourcesTab />}
+        {tab === 'calendar'  && (
+          <div>
+            {/* KPI Bar */}
+            <div style={{ marginBottom: 16 }}>
+              <KpiBar items={calKpis} />
+            </div>
+
+            {/* Controls: ViewToggle + FilterBar + Add Post */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', flex: 1 }}>
+                <ViewToggle
+                  storageKey="cal-view"
+                  defaultView="table"
+                  onViewChange={setCalView}
+                  views={[
+                    {
+                      key: 'table',
+                      label: 'Table',
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <rect x="1" y="1" width="12" height="3" rx="0.5" fill="currentColor" opacity="0.7" />
+                          <rect x="1" y="5.5" width="12" height="3" rx="0.5" fill="currentColor" opacity="0.5" />
+                          <rect x="1" y="10" width="12" height="3" rx="0.5" fill="currentColor" opacity="0.3" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      key: 'calendar',
+                      label: 'Calendar',
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                          <line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" strokeWidth="1" />
+                          <line x1="4.5" y1="2" x2="4.5" y2="0.5" stroke="currentColor" strokeWidth="1" />
+                          <line x1="9.5" y1="2" x2="9.5" y2="0.5" stroke="currentColor" strokeWidth="1" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      key: 'kanban',
+                      label: 'Kanban',
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <rect x="0.5" y="1" width="3.5" height="12" rx="0.5" fill="currentColor" opacity="0.7" />
+                          <rect x="5.25" y="1" width="3.5" height="8" rx="0.5" fill="currentColor" opacity="0.5" />
+                          <rect x="10" y="1" width="3.5" height="10" rx="0.5" fill="currentColor" opacity="0.3" />
+                        </svg>
+                      ),
+                    },
+                  ]}
+                />
+                <FilterBar
+                  filters={calFilterDefs}
+                  activeFilters={calFilters}
+                  onFilterChange={(key, values) => setCalFilters(prev => ({ ...prev, [key]: values }))}
+                  onClearAll={() => setCalFilters({})}
+                />
+              </div>
+              <button
+                onClick={calCreate}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 16px',
+                  background: 'var(--accent)',
+                  color: 'var(--bg-primary)',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Plus size={14} /> Add Post
+              </button>
+            </div>
+
+            {/* Main view */}
+            {calLoading ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '20px 0' }}>Loading calendar...</p>
+            ) : calView === 'table' ? (
+              <CalendarTable
+                items={filteredCalendarItems}
+                onSelect={setCalSelectedItem}
+                onUpdate={calUpdate}
+              />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
+                <Calendar size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+                <p style={{ fontSize: 14 }}>{calView === 'calendar' ? 'Calendar' : 'Kanban'} view coming soon</p>
+                <p style={{ fontSize: 12, marginTop: 6 }}>Switch to Table view to manage posts</p>
+              </div>
+            )}
+
+            {/* Seed button if no items */}
+            {!calLoading && calendarItems.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <button
+                  onClick={calSeed}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--bg-mid)',
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Seed sample calendar data
+                </button>
+              </div>
+            )}
+
+            {/* Detail panel overlay */}
+            {calSelectedItem && (
+              <CalendarDetail
+                item={calSelectedItem}
+                comments={calendarComments}
+                onUpdate={calUpdate}
+                onDelete={calDelete}
+                onClose={() => setCalSelectedItem(null)}
+                onRefreshComments={loadCalendarComments}
+                onOpenInStudio={handleOpenInStudio}
+              />
+            )}
+          </div>
+        )}
       </div>
 
     </div>
