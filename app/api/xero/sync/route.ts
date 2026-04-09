@@ -54,32 +54,51 @@ export async function POST() {
 
     const invoices = data.Invoices || []
 
+    // Parse Xero date format: "/Date(1234567890000+0000)/" or ISO string
+    const parseXeroDate = (dateStr: string | null | undefined): string | null => {
+      if (!dateStr) return null
+      const match = dateStr.match(/\/Date\((\d+)[+-]\d+\)\//)
+      if (match) {
+        return new Date(parseInt(match[1])).toISOString().split('T')[0]
+      }
+      if (dateStr.includes('T')) return dateStr.split('T')[0]
+      return dateStr
+    }
+
     // Upsert invoices into Supabase
     let synced = 0
+    const errors: string[] = []
     for (const inv of invoices) {
-      await supabase.from('bl_xero_invoices').upsert(
-        {
-          xero_invoice_id: inv.InvoiceID,
-          xero_contact_id: inv.Contact?.ContactID,
-          contact_name: inv.Contact?.Name,
-          invoice_number: inv.InvoiceNumber,
-          reference: inv.Reference,
-          invoice_type: inv.Type,
-          status: inv.Status,
-          currency_code: inv.CurrencyCode,
-          sub_total: inv.SubTotal,
-          total_tax: inv.TotalTax,
-          total: inv.Total,
-          amount_due: inv.AmountDue,
-          amount_paid: inv.AmountPaid,
-          date: inv.Date ? inv.Date.split('T')[0] : null,
-          due_date: inv.DueDate ? inv.DueDate.split('T')[0] : null,
-          line_items: inv.LineItems,
-          synced_at: new Date().toISOString(),
-        },
-        { onConflict: 'xero_invoice_id' }
-      )
-      synced++
+      const row = {
+        xero_invoice_id: inv.InvoiceID,
+        xero_contact_id: inv.Contact?.ContactID || null,
+        contact_name: inv.Contact?.Name || null,
+        invoice_number: inv.InvoiceNumber || null,
+        reference: inv.Reference || null,
+        invoice_type: inv.Type,
+        status: inv.Status,
+        currency_code: inv.CurrencyCode || 'GBP',
+        sub_total: inv.SubTotal || 0,
+        total_tax: inv.TotalTax || 0,
+        total: inv.Total || 0,
+        amount_due: inv.AmountDue || 0,
+        amount_paid: inv.AmountPaid || 0,
+        date: parseXeroDate(inv.Date),
+        due_date: parseXeroDate(inv.DueDate),
+        line_items: inv.LineItems || [],
+        synced_at: new Date().toISOString(),
+      }
+
+      const { error } = await supabase.from('bl_xero_invoices').upsert(row, {
+        onConflict: 'xero_invoice_id',
+      })
+
+      if (error) {
+        console.error('Invoice upsert error:', inv.InvoiceID, error.message)
+        errors.push(`${inv.InvoiceNumber}: ${error.message}`)
+      } else {
+        synced++
+      }
     }
 
     // Calculate MRR from AUTHORISED + PAID invoices in the current month
@@ -119,6 +138,7 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       invoices_synced: synced,
+      errors: errors.length > 0 ? errors : undefined,
       current_mrr: mrr,
       month: monthStart,
     })
