@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
               created_at: new Date().toISOString(),
             }))
 
-            const { error: insertErr } = await supabase.from('bb_incoming_articles').insert(rows)
+            const { error: insertErr } = await supabase.from('bb_incoming_articles').upsert(rows, { onConflict: 'original_url', ignoreDuplicates: true })
             if (insertErr) {
               logEntries.push({
                 source_id: source.id,
