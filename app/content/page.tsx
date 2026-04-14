@@ -559,7 +559,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
             <textarea value={previousPost} onChange={e => setPreviousPost(e.target.value)} placeholder="Paste your most recent post here. Claude will write this as a natural follow-up..." rows={4} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
           </div>
 
-          <Btn variant="teal" onClick={generate} disabled={generating}>
+          <Btn variant="teal" onClick={() => generate()} disabled={generating}>
             <Zap size={14} />{generating ? 'Generating...' : 'Generate draft'}
           </Btn>
         </Card>
