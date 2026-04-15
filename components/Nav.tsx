@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: '/angel', label: 'Angel' },
   { href: '/agents', label: 'Agents' },
   { href: '/health', label: 'Health' },
+  { href: '/audit', label: 'Audit' },
 ]
 
 export default function Nav() {
