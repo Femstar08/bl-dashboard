@@ -49,14 +49,16 @@ const COL_COLORS: Record<string, string> = {
   'Done':        '#34D399',
 }
 
-const AGENTS = ['CEO Agent', 'Prospect Agent', 'Content Agent', 'Pipeline Agent', 'Femi'] as const
+const AGENTS = ['CEO', 'CTO', 'CMO', 'COO', 'CFO', 'UX Designer', 'Femi'] as const
 
 const AGENT_COLORS: Record<string, string> = {
-  'CEO Agent':      '#7C8CF8',
-  'Prospect Agent': '#53E9C5',
-  'Content Agent':  '#F59E0B',
-  'Pipeline Agent': '#F97316',
-  'Femi':           '#34D399',
+  'CEO':         '#7C8CF8',
+  'CTO':         '#53E9C5',
+  'CMO':         '#F59E0B',
+  'COO':         '#F97316',
+  'CFO':         '#34D399',
+  'UX Designer': '#A78BFA',
+  'Femi':        '#F87171',
 }
 
 /* ── Styles ─────────────────────────────────────────────────────── */
