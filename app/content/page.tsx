@@ -38,6 +38,33 @@ const STATUS_COLOR: Record<string, string> = {
   Approved: GREEN, Published: 'var(--accent)', Rejected: RED,
 }
 
+const TOPIC_TAG_COLORS: Record<string, string> = {
+  AI: PURPLE, Accounting: 'var(--accent)', MTD: AMBER, HMRC: RED,
+  Tax: '#F97316', Finance: GREEN, Compliance: '#60A5FA', SME: AMBER,
+  Technology: '#818CF8', Payroll: 'var(--text-muted)',
+}
+
+const TAG_KEYWORDS: Record<string, string[]> = {
+  AI:         ['ai', 'artificial intelligence', 'machine learning', 'automation', 'llm', 'gpt', 'claude', 'chatgpt', 'copilot'],
+  Accounting: ['accounting', 'accountant', 'bookkeeping', 'audit', 'financial statement'],
+  MTD:        ['mtd', 'making tax digital'],
+  HMRC:       ['hmrc', 'self assessment', 'vat return', 'paye'],
+  Tax:        ['tax', 'taxation', 'capital gains', 'corporation tax', 'income tax'],
+  Finance:    ['finance', 'financial', 'investment', 'funding', 'cash flow', 'revenue', 'profit'],
+  Compliance: ['compliance', 'regulation', 'regulatory', 'gdpr', 'legal'],
+  SME:        ['sme', 'small business', 'startup', 'entrepreneur'],
+  Technology: ['technology', 'software', 'digital', 'saas', 'platform', 'tech'],
+  Payroll:    ['payroll', 'salary', 'wages'],
+}
+
+function extractTags(title: string, summary?: string | null): string[] {
+  const text = `${title} ${summary || ''}`.toLowerCase()
+  return Object.entries(TAG_KEYWORDS)
+    .filter(([, kws]) => kws.some(kw => text.includes(kw)))
+    .map(([tag]) => tag)
+    .slice(0, 4)
+}
+
 function s(obj: React.CSSProperties): React.CSSProperties { return obj }
 
 function Tag({ label, color }: { label: string; color: string }) {
@@ -167,36 +194,123 @@ function SourcesTab() {
   )
 }
 
+const KANBAN_COLS = [
+  { status: 'Fetched',   label: 'Queue',     color: 'var(--text-muted)' },
+  { status: 'AI_Drafted', label: 'Drafted',  color: PURPLE },
+  { status: 'Approved',  label: 'Scheduled', color: GREEN },
+  { status: 'Published', label: 'Posted',    color: 'var(--accent)' },
+] as const
+
 // ── QUEUE TAB ─────────────────────────────────────────────────
 function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: IncomingArticle) => void; onSaveAndGenerate: (article: IncomingArticle) => void }) {
-  const [articles, setArticles] = useState<IncomingArticle[]>([])
+  const [articlesByStatus, setArticlesByStatus] = useState<Record<string, IncomingArticle[]>>({})
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<string>('Fetched')
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [dragging, setDragging] = useState<{ id: string; fromStatus: string } | null>(null)
+  const [dragOver, setDragOver] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [inlineDraft, setInlineDraft] = useState('')
+  const [inlineDate, setInlineDate] = useState('')
+  const [inlineTime, setInlineTime] = useState('09:00')
+  const [inlineScheduling, setInlineScheduling] = useState(false)
   const [showManualForm, setShowManualForm] = useState(false)
   const [manualUrl, setManualUrl] = useState('')
   const [manualTitle, setManualTitle] = useState('')
   const [manualSummary, setManualSummary] = useState('')
+  const [manualPost, setManualPost] = useState('')
   const [manualProfile, setManualProfile] = useState<'femi' | 'bl_accountant' | 'bl_sme'>('femi')
   const [saving, setSaving] = useState(false)
   const [savingAndGenerating, setSavingAndGenerating] = useState(false)
   const [manualError, setManualError] = useState('')
 
-  const load = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase.from('bb_incoming_articles').select('*').eq('status', filter).order('fetched_at', { ascending: false }).limit(50)
-    if (data) setArticles(data)
+    const { data } = await supabase.from('bb_incoming_articles').select('*')
+      .not('status', 'eq', 'Rejected').order('fetched_at', { ascending: false }).limit(200)
+    if (data) {
+      const grouped: Record<string, IncomingArticle[]> = { Fetched: [], AI_Drafted: [], Approved: [], Published: [] }
+      data.forEach(a => {
+        const key = a.status === 'Ready_for_Review' ? 'AI_Drafted' : a.status
+        if (grouped[key]) grouped[key].push(a)
+      })
+      setArticlesByStatus(grouped)
+    }
     setLoading(false)
-  }, [filter])
+  }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { loadAll() }, [loadAll])
 
-  async function skip(id: string) {
-    await supabase.from('bb_incoming_articles').update({ status: 'Rejected' }).eq('id', id)
-    setArticles(a => a.filter(x => x.id !== id))
+  function handleDragStart(article: IncomingArticle, e: React.DragEvent) {
+    e.dataTransfer.effectAllowed = 'move'
+    const col = article.status === 'Ready_for_Review' ? 'AI_Drafted' : article.status
+    setDragging({ id: article.id, fromStatus: col })
+  }
+
+  function handleDragOver(e: React.DragEvent, status: string) {
+    e.preventDefault()
+    setDragOver(status)
+  }
+
+  async function handleDrop(e: React.DragEvent, toStatus: string) {
+    e.preventDefault()
+    setDragOver(null)
+    if (!dragging || dragging.fromStatus === toStatus) { setDragging(null); return }
+    const article = (articlesByStatus[dragging.fromStatus] || []).find(a => a.id === dragging.id)
+    if (!article) { setDragging(null); return }
+    setArticlesByStatus(prev => ({
+      ...prev,
+      [dragging.fromStatus]: (prev[dragging.fromStatus] || []).filter(a => a.id !== dragging.id),
+      [toStatus]: [{ ...article, status: toStatus }, ...(prev[toStatus] || [])],
+    }))
+    await supabase.from('bb_incoming_articles').update({ status: toStatus }).eq('id', dragging.id)
+    if (toStatus === 'Approved') {
+      setExpandedId(dragging.id)
+      setInlineDraft(article.ai_rewrite || '')
+      setInlineDate('')
+      setInlineTime('09:00')
+    }
+    setDragging(null)
+  }
+
+  function handleDragEnd() { setDragging(null); setDragOver(null) }
+
+  function openExpand(article: IncomingArticle) {
+    setExpandedId(article.id)
+    setInlineDraft(article.ai_rewrite || '')
+    setInlineDate(article.scheduled_at ? article.scheduled_at.split('T')[0] : '')
+    setInlineTime(article.scheduled_at ? (article.scheduled_at.split('T')[1] ?? '').slice(0, 5) || '09:00' : '09:00')
+  }
+
+  async function approveInline(article: IncomingArticle) {
+    if (!inlineDate) return
+    setInlineScheduling(true)
+    const scheduledAt = new Date(`${inlineDate}T${inlineTime}:00`).toISOString()
+    const postContent = inlineDraft.trim()
+    const { error: err } = await supabase.from('bb_incoming_articles').update({
+      ...(postContent ? { ai_rewrite: postContent } : {}),
+      scheduled_at: scheduledAt,
+      status: 'Approved',
+    }).eq('id', article.id)
+    if (!err) {
+      setExpandedId(null)
+      setArticlesByStatus(prev => {
+        const next = { ...prev }
+        Object.keys(next).forEach(k => { next[k] = next[k].filter(a => a.id !== article.id) })
+        next['Approved'] = [{ ...article, status: 'Approved', scheduled_at: scheduledAt, ai_rewrite: postContent || article.ai_rewrite }, ...next['Approved']]
+        return next
+      })
+    }
+    setInlineScheduling(false)
+  }
+
+  async function skipArticle(article: IncomingArticle) {
+    const fromStatus = Object.keys(articlesByStatus).find(k => articlesByStatus[k].some(a => a.id === article.id)) || 'Fetched'
+    setArticlesByStatus(prev => ({ ...prev, [fromStatus]: (prev[fromStatus] || []).filter(a => a.id !== article.id) }))
+    await supabase.from('bb_incoming_articles').update({ status: 'Rejected' }).eq('id', article.id)
   }
 
   function resetManualForm() {
-    setManualUrl(''); setManualTitle(''); setManualSummary(''); setManualProfile('femi'); setManualError('')
+    setManualUrl(''); setManualTitle(''); setManualSummary(''); setManualPost(''); setManualProfile('femi'); setManualError('')
   }
 
   function extractDomain(url: string): string | null {
@@ -213,8 +327,9 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
       original_url: url,
       original_excerpt: manualSummary.trim() || null,
       ai_summary: manualSummary.trim() || null,
+      ai_rewrite: manualPost.trim() || null,
       fetched_at: now,
-      status: 'Fetched',
+      status: manualPost.trim() ? 'AI_Drafted' : 'Fetched',
       profile_target: manualProfile,
       source_id: null,
       created_at: now,
@@ -227,9 +342,9 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
     setSaving(true)
     const article = await insertManualArticle()
     if (article) {
-      resetManualForm()
-      setShowManualForm(false)
-      await load()
+      const col = article.status === 'AI_Drafted' ? 'AI_Drafted' : 'Fetched'
+      setArticlesByStatus(prev => ({ ...prev, [col]: [article, ...(prev[col] || [])] }))
+      resetManualForm(); setShowManualForm(false)
     }
     setSaving(false)
   }
@@ -237,137 +352,223 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
   async function handleSaveAndGenerate() {
     setSavingAndGenerating(true)
     const article = await insertManualArticle()
-    if (article) {
-      resetManualForm()
-      setShowManualForm(false)
-      onSaveAndGenerate(article)
-    }
+    if (article) { resetManualForm(); setShowManualForm(false); onSaveAndGenerate(article) }
     setSavingAndGenerating(false)
   }
 
-  const statusOptions = ['Fetched', 'AI_Drafted', 'Ready_for_Review', 'Approved', 'Published', 'Rejected']
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>()
+    Object.values(articlesByStatus).flat().forEach(a => extractTags(a.original_title, a.ai_summary).forEach(t => tagSet.add(t)))
+    return Array.from(tagSet).sort()
+  }, [articlesByStatus])
+
+  const totalCount = Object.values(articlesByStatus).flat().length
   const domainHint = manualUrl.trim() ? extractDomain(manualUrl.trim()) : null
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <SectionTitle>Story queue</SectionTitle>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -10 }}>{articles.length} stories · updated daily by n8n</p>
+          <SectionTitle>Story pipeline</SectionTitle>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -10 }}>{totalCount} stories · drag cards between stages</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select value={filter} onChange={e => setFilter(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '6px 12px', fontSize: 12, outline: 'none', fontFamily: 'inherit' }}>
-            {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <Btn variant="ghost" onClick={load} small><RefreshCw size={12} /> Refresh</Btn>
-          <Btn variant="teal" onClick={() => setShowManualForm(v => !v)} small><Plus size={12} /> Add story manually</Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn variant="ghost" onClick={loadAll} small><RefreshCw size={12} /> Refresh</Btn>
+          <Btn variant="teal" onClick={() => setShowManualForm(v => !v)} small><Plus size={12} /> Add story</Btn>
         </div>
       </div>
 
+      {/* Manual form */}
       {showManualForm && (
         <div style={{ marginBottom: 20 }}>
           <Card accent="var(--accent)">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)' }}>Add story manually</label>
+              <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)' }}>Add story</label>
               <button onClick={() => { setShowManualForm(false); resetManualForm() }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}><X size={16} /></button>
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {/* URL field */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1 }}><Input value={manualUrl} onChange={setManualUrl} placeholder="Paste article URL (optional)" /></div>
-                  {manualUrl.trim() && extractDomain(manualUrl.trim()) && (
-                    <a href={manualUrl.trim()} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', display: 'flex', flexShrink: 0 }}><ExternalLink size={14} /></a>
-                  )}
-                </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}><Input value={manualUrl} onChange={setManualUrl} placeholder="Article URL (optional)" /></div>
+                {manualUrl.trim() && extractDomain(manualUrl.trim()) && (
+                  <a href={manualUrl.trim()} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', display: 'flex', alignItems: 'center', flexShrink: 0 }}><ExternalLink size={14} /></a>
+                )}
               </div>
-
-              {/* Title field */}
               <div>
-                <Input value={manualTitle} onChange={setManualTitle} placeholder="Article headline or topic *" />
+                <Input value={manualTitle} onChange={setManualTitle} placeholder="Headline or topic *" />
                 {domainHint && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Source: {domainHint}</p>}
               </div>
-
-              {/* Summary field */}
+              <textarea value={manualSummary} onChange={e => setManualSummary(e.target.value)} placeholder="Context — helps AI write a better draft" rows={2} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
               <div>
-                <textarea value={manualSummary} onChange={e => setManualSummary(e.target.value)} placeholder="Brief summary or context — helps Claude write a better draft" rows={3} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Write your own post (optional)</label>
+                <textarea value={manualPost} onChange={e => setManualPost(e.target.value)} placeholder="Write your LinkedIn post here — saves straight to Drafted column, ready to approve." rows={5} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+                {manualPost.trim() && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{manualPost.length} chars</p>}
               </div>
-
-              {/* Profile selector */}
               <div>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Profile</label>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {(Object.entries(PROFILE_LABELS) as [string, { label: string; color: string; desc: string }][]).map(([key, p]) => (
                     <button key={key} onClick={() => setManualProfile(key as typeof manualProfile)} style={{
                       background: manualProfile === key ? p.color + '15' : 'var(--bg-card)',
                       border: `1.5px solid ${manualProfile === key ? p.color : 'var(--border)'}`,
-                      borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontFamily: 'inherit',
+                      borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit',
                       fontSize: 12, fontWeight: 600, color: manualProfile === key ? p.color : 'var(--text-muted)',
                     }}>{p.label}</button>
                   ))}
                 </div>
               </div>
-
               {manualError && <div style={{ padding: '8px 12px', background: RED_BG, border: `1px solid ${RED}33`, borderRadius: 8, fontSize: 12, color: RED }}>{manualError}</div>}
-
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <Btn variant="ghost" onClick={handleSaveToQueue} disabled={saving || savingAndGenerating}>
-                  {saving ? 'Saving...' : 'Save to queue'}
-                </Btn>
-                <Btn variant="teal" onClick={handleSaveAndGenerate} disabled={saving || savingAndGenerating}>
-                  <Zap size={12} />{savingAndGenerating ? 'Saving...' : 'Save and generate draft'}
-                </Btn>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Btn variant="ghost" onClick={handleSaveToQueue} disabled={saving || savingAndGenerating}>{saving ? 'Saving...' : 'Save to queue'}</Btn>
+                <Btn variant="teal" onClick={handleSaveAndGenerate} disabled={saving || savingAndGenerating}><Zap size={12} />{savingAndGenerating ? 'Saving...' : 'Save & AI draft'}</Btn>
               </div>
             </div>
           </Card>
         </div>
       )}
 
-      {loading ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading queue...</p>
-      ) : articles.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-          <p style={{ fontSize: 14 }}>No stories with status &quot;{filter}&quot;</p>
-          <p style={{ fontSize: 12, marginTop: 6 }}>n8n fetches new stories daily from active sources</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {articles.map(article => (
-            <div key={article.id} style={{ background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 12, padding: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 }}>{article.original_title}</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Tag label={article.status} color={STATUS_COLOR[article.status] || 'var(--text-muted)'} />
-                    {article.profile_target && <Tag label={PROFILE_LABELS[article.profile_target]?.label || article.profile_target} color={PROFILE_LABELS[article.profile_target]?.color || 'var(--text-muted)'} />}
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(article.fetched_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                </div>
-                <a href={article.original_url} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', display: 'flex', flexShrink: 0 }}><ExternalLink size={14} /></a>
-              </div>
-              {article.ai_summary && <p style={{ fontSize: 13, color: 'var(--text-primary)', opacity: 0.7, lineHeight: 1.6, marginBottom: 12 }}>{article.ai_summary}</p>}
-              {article.ai_rewrite && (
-                <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 12, marginBottom: 12, borderLeft: `3px solid ${PURPLE}` }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: PURPLE, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Draft</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-primary)', opacity: 0.8, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{article.ai_rewrite.substring(0, 300)}{article.ai_rewrite.length > 300 ? '...' : ''}</p>
-                </div>
-              )}
-              {filter === 'Fetched' && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn variant="teal" onClick={() => onApprove(article)} small><Zap size={12} /> Generate draft</Btn>
-                  <Btn variant="danger" onClick={() => skip(article.id)} small><XCircle size={12} /> Skip</Btn>
-                </div>
-              )}
-              {filter === 'AI_Drafted' && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn variant="teal" onClick={() => onApprove(article)} small><Zap size={12} /> Edit &amp; schedule</Btn>
-                  <Btn variant="danger" onClick={() => skip(article.id)} small><XCircle size={12} /> Reject</Btn>
-                </div>
-              )}
-            </div>
+      {/* Tag filter */}
+      {!loading && allTags.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Topic:</span>
+          {allTags.map(tag => (
+            <button key={tag} onClick={() => setTagFilter(tagFilter === tag ? null : tag)} style={{
+              fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit',
+              background: tagFilter === tag ? (TOPIC_TAG_COLORS[tag] || 'var(--accent)') + '33' : 'var(--bg-mid)',
+              border: `1.5px solid ${tagFilter === tag ? (TOPIC_TAG_COLORS[tag] || 'var(--accent)') : 'var(--border)'}`,
+              color: tagFilter === tag ? (TOPIC_TAG_COLORS[tag] || 'var(--accent)') : 'var(--text-muted)',
+            }}>{tag}</button>
           ))}
+          {tagFilter && <button onClick={() => setTagFilter(null)} style={{ fontSize: 11, color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}>× Clear</button>}
+        </div>
+      )}
+
+      {loading ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading...</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, alignItems: 'start' }}>
+          {KANBAN_COLS.map(col => {
+            const colArticles = (articlesByStatus[col.status] || [])
+              .filter(a => !tagFilter || extractTags(a.original_title, a.ai_summary).includes(tagFilter))
+            const isOver = dragOver === col.status
+            return (
+              <div
+                key={col.status}
+                onDragOver={e => handleDragOver(e, col.status)}
+                onDrop={e => handleDrop(e, col.status)}
+                onDragLeave={() => setDragOver(null)}
+                style={{
+                  background: isOver ? col.color + '11' : 'var(--bg-mid)',
+                  border: `1.5px solid ${isOver ? col.color + '88' : 'var(--border)'}`,
+                  borderTop: `3px solid ${col.color}`,
+                  borderRadius: 10,
+                  minHeight: 300,
+                  transition: 'all 0.12s',
+                }}
+              >
+                <div style={{ padding: '12px 14px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: col.color }}>{col.label}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-card)', padding: '2px 8px', borderRadius: 99 }}>{colArticles.length}</span>
+                </div>
+
+                <div style={{ padding: '0 8px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {colArticles.length === 0 && (
+                    <div style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, opacity: 0.5 }}>
+                      {isOver ? '↓ Drop here' : 'Empty'}
+                    </div>
+                  )}
+                  {colArticles.map(article => {
+                    const tags = extractTags(article.original_title, article.ai_summary)
+                    const isExpanded = expandedId === article.id
+                    const isDraggingThis = dragging?.id === article.id
+                    return (
+                      <div
+                        key={article.id}
+                        draggable
+                        onDragStart={e => handleDragStart(article, e)}
+                        onDragEnd={handleDragEnd}
+                        style={{
+                          background: 'var(--bg-card)',
+                          border: `1px solid ${isExpanded ? col.color + '66' : 'var(--border)'}`,
+                          borderRadius: 8, padding: 12,
+                          cursor: isExpanded ? 'default' : (isDraggingThis ? 'grabbing' : 'grab'),
+                          opacity: isDraggingThis ? 0.35 : 1,
+                          transition: 'opacity 0.12s',
+                        }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 8 }}>
+                          {article.original_title}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+                          {article.profile_target && (
+                            <Tag label={PROFILE_LABELS[article.profile_target]?.label || article.profile_target} color={PROFILE_LABELS[article.profile_target]?.color || 'var(--text-muted)'} />
+                          )}
+                          {tags.map(tag => (
+                            <span key={tag} style={{
+                              fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                              padding: '2px 6px', borderRadius: 99,
+                              background: (TOPIC_TAG_COLORS[tag] || 'var(--text-muted)') + '22',
+                              color: TOPIC_TAG_COLORS[tag] || 'var(--text-muted)',
+                            }}>{tag}</span>
+                          ))}
+                        </div>
+
+                        {article.ai_rewrite && !isExpanded && (
+                          <p style={{ fontSize: 11, color: 'var(--text-primary)', opacity: 0.55, lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
+                            {article.ai_rewrite.substring(0, 110)}{article.ai_rewrite.length > 110 ? '…' : ''}
+                          </p>
+                        )}
+
+                        {col.status === 'Approved' && article.scheduled_at && !isExpanded && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: GREEN, marginBottom: 8 }}>
+                            <Clock size={10} />
+                            {new Date(article.scheduled_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        )}
+
+                        {isExpanded && (
+                          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 4 }}>
+                            <textarea
+                              value={inlineDraft}
+                              onChange={e => setInlineDraft(e.target.value)}
+                              rows={6}
+                              placeholder="Write your LinkedIn post here…"
+                              style={{ width: '100%', background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', padding: '8px 10px', fontSize: 12, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6, marginBottom: 8 }}
+                            />
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                              <input type="date" value={inlineDate} onChange={e => setInlineDate(e.target.value)} style={{ flex: 1, background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', padding: '6px 8px', fontSize: 11, outline: 'none', fontFamily: 'inherit' }} />
+                              <input type="time" value={inlineTime} onChange={e => setInlineTime(e.target.value)} style={{ width: 78, background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', padding: '6px 8px', fontSize: 11, outline: 'none', fontFamily: 'inherit' }} />
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <Btn variant="teal" onClick={() => approveInline(article)} disabled={!inlineDate || inlineScheduling} small>
+                                <CheckCircle size={11} />{inlineScheduling ? 'Saving…' : 'Approve'}
+                              </Btn>
+                              <Btn variant="ghost" onClick={() => setExpandedId(null)} small disabled={inlineScheduling}>Cancel</Btn>
+                            </div>
+                          </div>
+                        )}
+
+                        {!isExpanded && (
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
+                            {col.status === 'Fetched' && (
+                              <Btn variant="teal" onClick={() => onApprove(article)} small><Zap size={11} /> AI draft</Btn>
+                            )}
+                            <Btn variant="ghost" onClick={() => openExpand(article)} small>
+                              <Send size={11} /> {article.ai_rewrite ? 'Edit & approve' : 'Write & approve'}
+                            </Btn>
+                            <button onClick={() => skipArticle(article)} title="Remove" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 6px', display: 'flex', alignItems: 'center', borderRadius: 4 }}>
+                              <X size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -403,42 +604,25 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
     setImageLoading(true)
     setError('')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_N8N_IMAGE_WEBHOOK
-      if (!webhookUrl) throw new Error('Image webhook URL not configured')
-      const res = await fetch(webhookUrl, {
+      const res = await fetch('/api/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           article_id: article.id,
           title: article.original_title,
           summary: article.ai_summary || '',
-          relevance_score: 7,
           profile_target: profile,
           regenerate,
         })
       })
-      if (!res.ok) throw new Error(`Image webhook returned ${res.status}`)
-      const text = await res.text()
-      if (!text) throw new Error('Image webhook returned empty response — check n8n workflow is active')
-      const data = JSON.parse(text)
-      if (data.image_url && data.image_url.length > 200) {
+      if (!res.ok) throw new Error(`Image generation returned ${res.status}`)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      if (data.image_url) {
         setImageUrl(data.image_url)
         setImagePrompt(data.image_prompt || '')
-      } else if (data.success) {
-        // Image was saved to Supabase but response may have been truncated — fetch from DB
-        const { data: row } = await supabase
-          .from('bb_incoming_articles')
-          .select('generated_image_url')
-          .eq('id', article.id)
-          .single()
-        if (row?.generated_image_url) {
-          setImageUrl(row.generated_image_url)
-          setImagePrompt(data.image_prompt || '')
-        } else {
-          setError('Image generated but could not be loaded')
-        }
       } else {
-        setError('Image generation failed — check n8n workflow')
+        setError('Image generation failed')
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Image generation failed')
@@ -457,9 +641,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
     setGenerating(true)
     setError('')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_N8N_DRAFT_WEBHOOK
-      if (!webhookUrl) throw new Error('N8N webhook URL not configured')
-      const res = await fetch(webhookUrl, {
+      const res = await fetch('/api/generate-draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -470,12 +652,11 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
           different_angle: differentAngle,
         })
       })
-      if (!res.ok) throw new Error(`Webhook returned ${res.status}`)
-      const text = await res.text()
-      if (!text) throw new Error('Webhook returned empty response — check n8n workflow is active')
-      const data = JSON.parse(text)
+      if (!res.ok) throw new Error(`Draft generation returned ${res.status}`)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
       if (data.draft) setDraft(data.draft)
-      else setError('Draft generation failed — check n8n workflow')
+      else setError('Draft generation failed')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Generation failed')
     }
