@@ -14,6 +14,10 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 
 // ── Design tokens ─────────────────────────────────────────────
 const GREEN = '#34D399';
@@ -129,26 +133,6 @@ export default function HealthPage() {
   const unacknowledgedCount = errors.filter(e => !e.acknowledged).length;
   const totalErrors24h = last24h.length;
 
-  // ── Styles ──────────────────────────────────────────────────
-  const card: React.CSSProperties = {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 12,
-    padding: 20,
-  };
-
-  const badge = (color: string): React.CSSProperties => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-    fontSize: 11,
-    fontWeight: 600,
-    padding: '3px 8px',
-    borderRadius: 6,
-    background: `${color}18`,
-    color,
-  });
-
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
@@ -158,35 +142,27 @@ export default function HealthPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 20px' }}>
-      {/* Header */}
+    <div className="bl-page">
+      <PageHeader
+        title="System Health"
+        subtitle="Workflow status and error monitoring"
+        icon={Activity}
+        gradientFrom="#7F1D1D"
+        gradientTo="#991B1B"
+        accentColor="#F87171"
+      />
+
+      {/* Header row: overall status badge + refresh */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Activity size={22} style={{ color: 'var(--accent)' }} />
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            System Health
-          </h1>
-          <span style={badge(
-            overallHealth === 'healthy' ? GREEN : overallHealth === 'warning' ? AMBER : RED
-          )}>
-            {overallHealth === 'healthy' && <><CheckCircle2 size={12} /> All Systems OK</>}
-            {overallHealth === 'warning' && <><AlertTriangle size={12} /> Warnings</>}
-            {overallHealth === 'error' && <><XCircle size={12} /> Errors Detected</>}
-          </span>
-        </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '8px 14px', borderRadius: 8,
-            border: '1px solid var(--border)', background: 'var(--bg-card)',
-            color: 'var(--text-muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-          }}
-        >
+        <Badge style={{ background: `${overallHealth === 'healthy' ? GREEN : overallHealth === 'warning' ? AMBER : RED}22`, color: overallHealth === 'healthy' ? GREEN : overallHealth === 'warning' ? AMBER : RED, border: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}>
+          {overallHealth === 'healthy' && <><CheckCircle2 size={12} /> All Systems OK</>}
+          {overallHealth === 'warning' && <><AlertTriangle size={12} /> Warnings</>}
+          {overallHealth === 'error' && <><XCircle size={12} /> Errors Detected</>}
+        </Badge>
+        <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
           <RefreshCw size={14} style={refreshing ? { animation: 'spin 1s linear infinite' } : {}} />
           Refresh
-        </button>
+        </Button>
       </div>
 
       {/* KPI Cards */}
@@ -217,13 +193,15 @@ export default function HealthPage() {
             icon: <AlertTriangle size={18} />,
           },
         ].map(kpi => (
-          <div key={kpi.label} style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span style={{ color: kpi.color }}>{kpi.icon}</span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{kpi.label}</span>
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: kpi.color }}>{kpi.value}</div>
-          </div>
+          <Card key={kpi.label} className="bl-card">
+            <CardContent className="p-6">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ color: kpi.color }}>{kpi.icon}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{kpi.label}</span>
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: kpi.color }}>{kpi.value}</div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
@@ -233,32 +211,27 @@ export default function HealthPage() {
       </h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
         {workflows.map(wf => (
-          <div key={wf.id} style={{
-            ...card,
-            padding: '14px 20px',
-            borderLeft: `3px solid ${wf.status === 'healthy' ? GREEN : wf.status === 'warning' ? AMBER : RED}`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-          }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', minWidth: 280 }}>
-              {wf.name.replace('BL — ', '')}
-            </span>
-            <span style={badge(wf.status === 'healthy' ? GREEN : wf.status === 'warning' ? AMBER : RED)}>
-              {wf.status === 'healthy' && <><CheckCircle2 size={10} /> OK</>}
-              {wf.status === 'warning' && <><AlertTriangle size={10} /> {wf.errorCount24h} err</>}
-              {wf.status === 'error' && <><XCircle size={10} /> {wf.errorCount24h} errs</>}
-            </span>
-            {wf.lastError ? (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                <span style={{ color: RED }}>Last error:</span>{' '}
-                {wf.lastError.error_node} &mdash; {timeAgo(wf.lastError.created_at)}
-                {' — '}{wf.lastError.error_message}
+          <Card key={wf.id} className="bl-card" style={{ borderLeft: `3px solid ${wf.status === 'healthy' ? GREEN : wf.status === 'warning' ? AMBER : RED}` }}>
+            <CardContent className="p-6" style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', minWidth: 280 }}>
+                {wf.name.replace('BL — ', '')}
               </span>
-            ) : (
-              <span style={{ fontSize: 11, color: GREEN }}>No errors recorded</span>
-            )}
-          </div>
+              <Badge style={{ background: `${wf.status === 'healthy' ? GREEN : wf.status === 'warning' ? AMBER : RED}18`, color: wf.status === 'healthy' ? GREEN : wf.status === 'warning' ? AMBER : RED, border: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}>
+                {wf.status === 'healthy' && <><CheckCircle2 size={10} /> OK</>}
+                {wf.status === 'warning' && <><AlertTriangle size={10} /> {wf.errorCount24h} err</>}
+                {wf.status === 'error' && <><XCircle size={10} /> {wf.errorCount24h} errs</>}
+              </Badge>
+              {wf.lastError ? (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ color: RED }}>Last error:</span>{' '}
+                  {wf.lastError.error_node} &mdash; {timeAgo(wf.lastError.created_at)}
+                  {' — '}{wf.lastError.error_message}
+                </span>
+              ) : (
+                <span style={{ fontSize: 11, color: GREEN }}>No errors recorded</span>
+              )}
+            </CardContent>
+          </Card>
         ))}
       </div>
 
@@ -268,77 +241,63 @@ export default function HealthPage() {
           Error Log
         </h2>
         {unacknowledgedCount > 0 && (
-          <button
-            onClick={handleAcknowledgeAll}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 12px', borderRadius: 8,
-              border: '1px solid var(--border)', background: 'var(--bg-card)',
-              color: AMBER, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-            }}
-          >
+          <Button variant="outline" onClick={handleAcknowledgeAll} style={{ color: AMBER }}>
             <EyeOff size={13} /> Acknowledge All ({unacknowledgedCount})
-          </button>
+          </Button>
         )}
       </div>
 
       {errors.length === 0 ? (
-        <div style={{ ...card, textAlign: 'center', padding: 40 }}>
-          <CheckCircle2 size={32} style={{ color: GREEN, marginBottom: 12 }} />
-          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>No errors recorded</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-            All workflows are running smoothly
-          </div>
-        </div>
+        <Card className="bl-card">
+          <CardContent className="p-6" style={{ textAlign: 'center', padding: 40 }}>
+            <CheckCircle2 size={32} style={{ color: GREEN, marginBottom: 12 }} />
+            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>No errors recorded</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+              All workflows are running smoothly
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {errors.map(err => (
-            <div
+            <Card
               key={err.id}
-              style={{
-                ...card,
-                padding: '14px 18px',
-                opacity: err.acknowledged ? 0.5 : 1,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 12,
-              }}
+              className="bl-card"
+              style={{ opacity: err.acknowledged ? 0.5 : 1 }}
             >
-              <XCircle size={16} style={{ color: RED, marginTop: 2, flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {err.workflow_name.replace('BL — ', '')}
-                  </span>
-                  <span style={badge(PURPLE)}>{err.error_node}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                    {timeAgo(err.created_at)}
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, color: RED, marginTop: 4 }}>
-                  {err.error_message}
-                </div>
-                {err.error_description && (
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {err.error_description}
+              <CardContent className="p-6" style={{ padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <XCircle size={16} style={{ color: RED, marginTop: 2, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {err.workflow_name.replace('BL — ', '')}
+                    </span>
+                    <Badge style={{ background: `${PURPLE}18`, color: PURPLE, border: 'none' }}>{err.error_node}</Badge>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                      {timeAgo(err.created_at)}
+                    </span>
                   </div>
+                  <div style={{ fontSize: 12, color: RED, marginTop: 4 }}>
+                    {err.error_message}
+                  </div>
+                  {err.error_description && (
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                      {err.error_description}
+                    </div>
+                  )}
+                </div>
+                {!err.acknowledged && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleAcknowledge(err.id)}
+                    title="Acknowledge"
+                    style={{ width: 30, height: 30, padding: 0, flexShrink: 0 }}
+                  >
+                    <Eye size={14} />
+                  </Button>
                 )}
-              </div>
-              {!err.acknowledged && (
-                <button
-                  onClick={() => handleAcknowledge(err.id)}
-                  title="Acknowledge"
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 30, height: 30, borderRadius: 6,
-                    border: '1px solid var(--border)', background: 'transparent',
-                    color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0,
-                  }}
-                >
-                  <Eye size={14} />
-                </button>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
