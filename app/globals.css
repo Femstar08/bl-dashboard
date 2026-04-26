@@ -100,3 +100,58 @@ h1, h2, h3 {
     @apply bg-background text-foreground; }
   html {
     @apply font-sans; } }
+
+/* ── shadcn token reconciliation — map onto B&L palette ───── */
+[data-theme="dark"], .dark {
+  --background: #0F1B35;
+  --foreground: #E8EDF5;
+  --card: #1E2F52;
+  --card-foreground: #E8EDF5;
+  --popover: #1E2F52;
+  --popover-foreground: #E8EDF5;
+  --primary: #53E9C5;
+  --primary-foreground: #0F1B35;
+  --muted: #162240;
+  --muted-foreground: #8892A4;
+  --border: rgba(83,233,197,0.15);
+  --accent: #53E9C5;
+  --accent-foreground: #0F1B35;
+  --ring: #53E9C5;
+}
+
+[data-theme="light"] {
+  --background: #F4F6FB;
+  --foreground: #0F1B35;
+  --card: #FFFFFF;
+  --card-foreground: #0F1B35;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F1B35;
+  --primary: #0F6E56;
+  --primary-foreground: #FFFFFF;
+  --muted: #E8EDF5;
+  --muted-foreground: #5C6478;
+  --border: rgba(15,27,53,0.12);
+  --accent: #0F6E56;
+  --accent-foreground: #FFFFFF;
+  --ring: #0F6E56;
+}
+
+/* ── Shared component classes ────────────────────────────── */
+@layer components {
+  .bl-card {
+    @apply bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px];
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .bl-card:hover {
+    @apply -translate-y-px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  [data-theme="dark"] .bl-card:hover {
+    box-shadow: none;
+    border-color: rgba(83,233,197,0.2);
+  }
+  .bl-page {
+    @apply max-w-[1440px] mx-auto px-6 py-8 pb-20;
+  }
+}
