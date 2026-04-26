@@ -113,6 +113,9 @@ h1, h2, h3 {
   --primary-foreground: #0F1B35;
   --muted: #162240;
   --muted-foreground: #8892A4;
+  --secondary: #162240;
+  --secondary-foreground: #E8EDF5;
+  --input: rgba(83,233,197,0.15);
   --border: rgba(83,233,197,0.15);
   --accent: #53E9C5;
   --accent-foreground: #0F1B35;
@@ -147,7 +150,8 @@ h1, h2, h3 {
     @apply -translate-y-px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
-  [data-theme="dark"] .bl-card:hover {
+  [data-theme="dark"] .bl-card:hover,
+  .dark .bl-card:hover {
     box-shadow: none;
     border-color: rgba(83,233,197,0.2);
   }
