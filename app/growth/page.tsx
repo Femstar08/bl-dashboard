@@ -4,9 +4,13 @@ import { supabase } from '@/lib/supabase'
 import { LEAD_STAGES, LEAD_STAGE_COLORS, type LeadStage } from '@/lib/tokens'
 import {
   Plus, CheckCircle, AlertCircle, Users,
-  ChevronDown, Clock, X, Linkedin
+  ChevronDown, Clock, X, Linkedin, TrendingUp
 } from 'lucide-react'
 import LinkedInProspectPanel from '@/components/LinkedInProspectPanel'
+import PageHeader from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 
 // ── DESIGN TOKENS ───────────────────────────────────────────────
 const AMBER = '#F59E0B'
@@ -91,64 +95,6 @@ function Tag({ label, color }: { label: string; color: string }) {
     >
       {label}
     </span>
-  )
-}
-
-function Btn({
-  onClick,
-  children,
-  variant = 'ghost',
-  disabled,
-  small,
-}: {
-  onClick?: () => void
-  children: React.ReactNode
-  variant?: 'ghost' | 'teal' | 'danger' | 'amber' | 'purple'
-  disabled?: boolean
-  small?: boolean
-}) {
-  const base: React.CSSProperties = {
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    fontFamily: 'inherit',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 8,
-    border: '1.5px solid',
-    transition: 'opacity 0.15s',
-    opacity: disabled ? 0.4 : 1,
-    fontSize: small ? 11 : 13,
-    fontWeight: 500,
-    padding: small ? '4px 10px' : '8px 16px',
-    background: 'transparent',
-  }
-  const variants: Record<string, React.CSSProperties> = {
-    ghost: { borderColor: 'var(--border)', color: 'var(--text-primary)' },
-    teal: { borderColor: 'var(--accent)', color: 'var(--accent)' },
-    danger: { borderColor: RED + '66', color: RED },
-    amber: { borderColor: AMBER + '66', color: AMBER },
-    purple: { borderColor: PURPLE + '66', color: PURPLE },
-  }
-  return (
-    <button onClick={disabled ? undefined : onClick} style={{ ...base, ...variants[variant] }}>
-      {children}
-    </button>
-  )
-}
-
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div
-      style={{
-        background: 'var(--bg-mid)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        padding: 20,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
   )
 }
 
@@ -398,14 +344,16 @@ export default function GrowthPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg-primary)',
-        color: 'var(--text-primary)',
-        fontFamily: 'inherit',
-      }}
-    >
+    <div className="bl-page">
+      <PageHeader
+        title="Growth"
+        subtitle="Outreach tracking and weekly activity"
+        icon={TrendingUp}
+        gradientFrom="#064E3B"
+        gradientTo="#065F46"
+        accentColor="#34D399"
+      />
+
       {error && (
         <div
           style={{
@@ -435,85 +383,72 @@ export default function GrowthPage() {
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 24px 64px' }}>
         {/* ── ZONE 1: TODAY'S FOCUS ─────────────────────────── */}
-        <Card style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              display: 'flex',
-              gap: 16,
-              flexWrap: 'wrap',
-            }}
-          >
+        <Card className="bl-card" style={{ marginBottom: 32 }}>
+          <CardContent className="p-6">
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '12px 20px',
-                background: 'var(--bg-card)',
-                borderRadius: 10,
-                flex: 1,
-                minWidth: 200,
+                gap: 16,
+                flexWrap: 'wrap',
               }}
             >
-              <AlertCircle size={18} color={overdueCount > 0 ? RED : 'var(--text-muted)'} />
-              <span style={{ fontSize: 22, fontWeight: 700, color: overdueCount > 0 ? RED : 'var(--text-primary)' }}>
-                {overdueCount}
-              </span>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>follow-ups overdue</span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '12px 20px',
+                  background: 'var(--bg-card)',
+                  borderRadius: 10,
+                  flex: 1,
+                  minWidth: 200,
+                }}
+              >
+                <AlertCircle size={18} color={overdueCount > 0 ? RED : 'var(--text-muted)'} />
+                <span style={{ fontSize: 22, fontWeight: 700, color: overdueCount > 0 ? RED : 'var(--text-primary)' }}>
+                  {overdueCount}
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>follow-ups overdue</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '12px 20px',
+                  background: 'var(--bg-card)',
+                  borderRadius: 10,
+                  flex: 1,
+                  minWidth: 200,
+                }}
+              >
+                <Users size={18} color={'var(--accent)'} />
+                <span style={{ fontSize: 22, fontWeight: 700 }}>{newLeadsCount}</span>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>new leads</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '12px 20px',
+                  background: 'var(--bg-card)',
+                  borderRadius: 10,
+                  flex: 1,
+                  minWidth: 200,
+                }}
+              >
+                <CheckCircle size={18} color={GREEN} />
+                <span style={{ fontSize: 22, fontWeight: 700 }}>{contactedThisWeek}</span>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>contacted this week</span>
+              </div>
+              <Button
+                onClick={() => setProspectPanelOpen(true)}
+              >
+                + Add LinkedIn Prospect
+              </Button>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '12px 20px',
-                background: 'var(--bg-card)',
-                borderRadius: 10,
-                flex: 1,
-                minWidth: 200,
-              }}
-            >
-              <Users size={18} color={'var(--accent)'} />
-              <span style={{ fontSize: 22, fontWeight: 700 }}>{newLeadsCount}</span>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>new leads</span>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '12px 20px',
-                background: 'var(--bg-card)',
-                borderRadius: 10,
-                flex: 1,
-                minWidth: 200,
-              }}
-            >
-              <CheckCircle size={18} color={GREEN} />
-              <span style={{ fontSize: 22, fontWeight: 700 }}>{contactedThisWeek}</span>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>contacted this week</span>
-            </div>
-            <button
-              onClick={() => setProspectPanelOpen(true)}
-              style={{
-                background: 'var(--accent)',
-                border: 'none',
-                borderRadius: 8,
-                color: 'var(--bg-primary)',
-                padding: '10px 20px',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              + Add LinkedIn Prospect
-            </button>
-          </div>
+          </CardContent>
         </Card>
 
         {/* ── ZONE 2: THREE-COLUMN ACTION AREA ─────────────── */}
@@ -529,20 +464,13 @@ export default function GrowthPage() {
           <div>
             <SectionTitle>Follow Up Today</SectionTitle>
             {overdueLeads.length === 0 ? (
-              <Card
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 40,
-                  gap: 12,
-                }}
-              >
-                <CheckCircle size={28} color={'var(--accent)'} />
-                <span style={{ color: 'var(--accent)', fontSize: 14 }}>
-                  You&apos;re all caught up today
-                </span>
+              <Card className="bl-card">
+                <CardContent className="p-6" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 }}>
+                  <CheckCircle size={28} color={'var(--accent)'} />
+                  <span style={{ color: 'var(--accent)', fontSize: 14 }}>
+                    You&apos;re all caught up today
+                  </span>
+                </CardContent>
               </Card>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -553,115 +481,120 @@ export default function GrowthPage() {
 
                   if (editingId === l.id) {
                     return (
-                      <Card key={l.id}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <select
-                            value={editForm.status || ''}
-                            onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
-                            style={{
-                              background: 'var(--bg-card)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 8,
-                              color: 'var(--text-primary)',
-                              padding: '8px 12px',
-                              fontSize: 13,
-                              width: '100%',
-                              outline: 'none',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            {LEAD_STAGES.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                          <Input
-                            value={editForm.next_action || ''}
-                            onChange={(v) => setEditForm((f) => ({ ...f, next_action: v }))}
-                            placeholder="Next action"
-                          />
-                          <Input
-                            value={editForm.follow_up_date || ''}
-                            onChange={(v) => setEditForm((f) => ({ ...f, follow_up_date: v }))}
-                            type="date"
-                          />
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <Btn variant="teal" small onClick={saveEdit}>
-                              Save
-                            </Btn>
-                            <Btn
-                              small
-                              onClick={() => {
-                                setEditingId(null)
-                                setEditForm({})
+                      <Card key={l.id} className="bl-card">
+                        <CardContent className="p-6">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <select
+                              value={editForm.status || ''}
+                              onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                              style={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 8,
+                                color: 'var(--text-primary)',
+                                padding: '8px 12px',
+                                fontSize: 13,
+                                width: '100%',
+                                outline: 'none',
+                                fontFamily: 'inherit',
                               }}
                             >
-                              Cancel
-                            </Btn>
+                              {LEAD_STAGES.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                            <Input
+                              value={editForm.next_action || ''}
+                              onChange={(v) => setEditForm((f) => ({ ...f, next_action: v }))}
+                              placeholder="Next action"
+                            />
+                            <Input
+                              value={editForm.follow_up_date || ''}
+                              onChange={(v) => setEditForm((f) => ({ ...f, follow_up_date: v }))}
+                              type="date"
+                            />
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <Button size="sm" onClick={saveEdit}>
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingId(null)
+                                  setEditForm({})
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
-                        </div>
+                        </CardContent>
                       </Card>
                     )
                   }
 
                   return (
-                    <Card key={l.id}>
-                      <div
-                        style={{ cursor: 'pointer', marginBottom: 8 }}
-                        onClick={() => startEdit(l)}
-                      >
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>
-                          {l.contact_name || l.company_name || 'Unknown'}
+                    <Card key={l.id} className="bl-card">
+                      <CardContent className="p-6">
+                        <div
+                          style={{ cursor: 'pointer', marginBottom: 8 }}
+                          onClick={() => startEdit(l)}
+                        >
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>
+                            {l.contact_name || l.company_name || 'Unknown'}
+                          </div>
+                          {l.contact_name && l.company_name && l.contact_name !== l.company_name && (
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{l.company_name}</div>
+                          )}
                         </div>
-                        {l.contact_name && l.company_name && l.contact_name !== l.company_name && (
-                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{l.company_name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <Tag label={l.status} color={LEAD_STAGE_COLORS[l.status as LeadStage] || 'var(--text-muted)'} />
+                          <span
+                            style={{
+                              fontSize: 12,
+                              color: days === 0 ? AMBER : RED,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {days === 0 ? 'Due today' : `${days} days overdue`}
+                          </span>
+                        </div>
+                        {l.next_action && (
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8 }}>
+                            {l.next_action}
+                          </div>
                         )}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <Tag label={l.status} color={LEAD_STAGE_COLORS[l.status as LeadStage] || 'var(--text-muted)'} />
-                        <span
-                          style={{
-                            fontSize: 12,
-                            color: days === 0 ? AMBER : RED,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {days === 0 ? 'Due today' : `${days} days overdue`}
-                        </span>
-                      </div>
-                      {l.next_action && (
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8 }}>
-                          {l.next_action}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              updateLead(l.id, {
+                                follow_up_date: null,
+                                next_action: null,
+                              })
+                            }
+                          >
+                            <CheckCircle size={12} /> Done
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            style={{ borderColor: AMBER + '66', color: AMBER }}
+                            onClick={() => {
+                              const snoozeDate = new Date()
+                              snoozeDate.setDate(snoozeDate.getDate() + 3)
+                              updateLead(l.id, {
+                                snoozed_until: snoozeDate.toISOString().split('T')[0],
+                              })
+                            }}
+                          >
+                            <Clock size={12} /> Snooze 3d
+                          </Button>
                         </div>
-                      )}
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <Btn
-                          variant="teal"
-                          small
-                          onClick={() =>
-                            updateLead(l.id, {
-                              follow_up_date: null,
-                              next_action: null,
-                            })
-                          }
-                        >
-                          <CheckCircle size={12} /> Done
-                        </Btn>
-                        <Btn
-                          variant="amber"
-                          small
-                          onClick={() => {
-                            const snoozeDate = new Date()
-                            snoozeDate.setDate(snoozeDate.getDate() + 3)
-                            updateLead(l.id, {
-                              snoozed_until: snoozeDate.toISOString().split('T')[0],
-                            })
-                          }}
-                        >
-                          <Clock size={12} /> Snooze 3d
-                        </Btn>
-                      </div>
+                      </CardContent>
                     </Card>
                   )
                 })}
@@ -673,29 +606,19 @@ export default function GrowthPage() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>NEW TO CONTACT</h2>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setProspectPanelOpen(true)}
-                style={{
-                  background: 'transparent',
-                  border: '1.5px solid var(--accent)',
-                  borderRadius: 8,
-                  color: 'var(--accent)',
-                  padding: '4px 12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
               >
                 + Add Prospect
-              </button>
+              </Button>
             </div>
             {newLeads.length === 0 ? (
-              <Card style={{ padding: 40, textAlign: 'center' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>No new leads waiting</span>
+              <Card className="bl-card">
+                <CardContent className="p-6" style={{ textAlign: 'center' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>No new leads waiting</span>
+                </CardContent>
               </Card>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -704,146 +627,139 @@ export default function GrowthPage() {
                   const scoreBg = score !== null && score >= 8 ? GREEN : score !== null && score >= 6 ? AMBER : 'var(--text-muted)'
 
                   return (
-                    <Card key={l.id}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>
-                          {l.company_name || 'Unknown'}
-                        </span>
-                        {score !== null && (
-                          <span
+                    <Card key={l.id} className="bl-card">
+                      <CardContent className="p-6">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>
+                            {l.company_name || 'Unknown'}
+                          </span>
+                          {score !== null && (
+                            <Badge style={{ background: scoreBg + '22', color: scoreBg, border: 'none' }}>
+                              {score}
+                            </Badge>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                          {l.trigger_type && <Tag label={l.trigger_type} color={'var(--accent)'} />}
+                          {l.industry && (
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.industry}</span>
+                          )}
+                        </div>
+                        {l.bl_reason && (
+                          <div
                             style={{
                               fontSize: 11,
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: 99,
-                              background: scoreBg + '22',
-                              color: scoreBg,
+                              color: 'var(--text-muted)',
+                              fontStyle: 'italic',
+                              marginBottom: 4,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            {score}
-                          </span>
+                            {l.bl_reason}
+                          </div>
                         )}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                        {l.trigger_type && <Tag label={l.trigger_type} color={'var(--accent)'} />}
-                        {l.industry && (
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.industry}</span>
+                        {l.postcode && (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
+                            {l.postcode}
+                          </div>
                         )}
-                      </div>
-                      {l.bl_reason && (
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: 'var(--text-muted)',
-                            fontStyle: 'italic',
-                            marginBottom: 4,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {l.bl_reason}
-                        </div>
-                      )}
-                      {l.postcode && (
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
-                          {l.postcode}
-                        </div>
-                      )}
 
-                      {/* Inline contact name input for Send request */}
-                      {sendingId === l.id ? (
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
-                          <input
-                            type="text"
-                            value={sendingName}
-                            onChange={(e) => setSendingName(e.target.value)}
-                            placeholder="Contact name"
-                            autoFocus
-                            style={{
-                              background: 'var(--bg-card)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 6,
-                              color: 'var(--text-primary)',
-                              padding: '4px 8px',
-                              fontSize: 12,
-                              outline: 'none',
-                              fontFamily: 'inherit',
-                              flex: 1,
-                            }}
-                          />
-                          <Btn
-                            variant="teal"
-                            small
-                            onClick={() => {
-                              const threeDays = new Date()
-                              threeDays.setDate(threeDays.getDate() + 3)
-                              updateLead(l.id, {
-                                status: 'Contacted',
-                                contact_name: sendingName || null,
-                                follow_up_date: threeDays.toISOString().split('T')[0],
-                              })
-                              setSendingId(null)
-                              setSendingName('')
-                            }}
-                          >
-                            Save
-                          </Btn>
-                          <Btn
-                            small
-                            onClick={() => {
-                              setSendingId(null)
-                              setSendingName('')
-                            }}
-                          >
-                            Cancel
-                          </Btn>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          <Btn
-                            variant="teal"
-                            small
-                            onClick={() => {
-                              setSendingId(l.id)
-                              setSendingName('')
-                            }}
-                          >
-                            Send request
-                          </Btn>
-                          <Btn
-                            variant="purple"
-                            small
-                            onClick={() =>
-                              window.open(
-                                l.linkedin_url ||
-                                  'https://www.linkedin.com/search/results/companies/?keywords=' +
-                                    encodeURIComponent(l.company_name || ''),
-                                '_blank',
-                                'noopener,noreferrer'
-                              )
-                            }
-                          >
-                            <Linkedin size={12} /> LinkedIn
-                          </Btn>
-                          <Btn
-                            variant="danger"
-                            small
-                            onClick={() =>
-                              updateLead(l.id, {
-                                status: 'Lost',
-                              })
-                            }
-                          >
-                            Dismiss
-                          </Btn>
-                        </div>
-                      )}
+                        {/* Inline contact name input for Send request */}
+                        {sendingId === l.id ? (
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+                            <input
+                              type="text"
+                              value={sendingName}
+                              onChange={(e) => setSendingName(e.target.value)}
+                              placeholder="Contact name"
+                              autoFocus
+                              style={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 6,
+                                color: 'var(--text-primary)',
+                                padding: '4px 8px',
+                                fontSize: 12,
+                                outline: 'none',
+                                fontFamily: 'inherit',
+                                flex: 1,
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const threeDays = new Date()
+                                threeDays.setDate(threeDays.getDate() + 3)
+                                updateLead(l.id, {
+                                  status: 'Contacted',
+                                  contact_name: sendingName || null,
+                                  follow_up_date: threeDays.toISOString().split('T')[0],
+                                })
+                                setSendingId(null)
+                                setSendingName('')
+                              }}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSendingId(null)
+                                setSendingName('')
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSendingId(l.id)
+                                setSendingName('')
+                              }}
+                            >
+                              Send request
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              style={{ borderColor: PURPLE + '66', color: PURPLE }}
+                              onClick={() =>
+                                window.open(
+                                  l.linkedin_url ||
+                                    'https://www.linkedin.com/search/results/companies/?keywords=' +
+                                      encodeURIComponent(l.company_name || ''),
+                                  '_blank',
+                                  'noopener,noreferrer'
+                                )
+                              }
+                            >
+                              <Linkedin size={12} /> LinkedIn
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() =>
+                                updateLead(l.id, {
+                                  status: 'Lost',
+                                })
+                              }
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
                     </Card>
                   )
                 })}
                 {newLeads.length > showMoreNewCount && (
-                  <Btn onClick={() => setShowMoreNewCount((c) => c + 8)}>Load more</Btn>
+                  <Button variant="outline" onClick={() => setShowMoreNewCount((c) => c + 8)}>Load more</Button>
                 )}
               </div>
             )}
@@ -852,96 +768,100 @@ export default function GrowthPage() {
           {/* ── Column C: This Week ── */}
           <div>
             <SectionTitle>This Week</SectionTitle>
-            <Card style={{ marginBottom: 16 }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 12,
-                  marginBottom: 16,
-                }}
-              >
-                {(
-                  [
-                    { field: 'sent' as const, label: 'Sent' },
-                    { field: 'accepted' as const, label: 'Accepted' },
-                    { field: 'replied' as const, label: 'Replied' },
-                    { field: 'calls_booked' as const, label: 'Calls' },
-                  ] as const
-                ).map(({ field, label }) => (
-                  <div
-                    key={field}
-                    style={{
-                      background: 'var(--bg-card)',
-                      borderRadius: 10,
-                      padding: '14px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 24, fontWeight: 700 }}>
-                        {currentWeekStats ? currentWeekStats[field] : 0}
+            <Card className="bl-card" style={{ marginBottom: 16 }}>
+              <CardContent className="p-6">
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  {(
+                    [
+                      { field: 'sent' as const, label: 'Sent' },
+                      { field: 'accepted' as const, label: 'Accepted' },
+                      { field: 'replied' as const, label: 'Replied' },
+                      { field: 'calls_booked' as const, label: 'Calls' },
+                    ] as const
+                  ).map(({ field, label }) => (
+                    <div
+                      key={field}
+                      style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: 10,
+                        padding: '14px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 24, fontWeight: 700 }}>
+                          {currentWeekStats ? currentWeekStats[field] : 0}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' as const }}>
+                          {label}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' as const }}>
-                        {label}
-                      </div>
+                      <Button size="sm" onClick={() => incrementStat(field)}>
+                        <Plus size={12} /> 1
+                      </Button>
                     </div>
-                    <Btn variant="teal" small onClick={() => incrementStat(field)}>
-                      <Plus size={12} /> 1
-                    </Btn>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* Conversion rates */}
-              <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-muted)' }}>
-                <span>
-                  Accept rate:{' '}
-                  <strong style={{ color: 'var(--text-primary)' }}>
-                    {currentWeekStats && currentWeekStats.sent > 0
-                      ? ((currentWeekStats.accepted / currentWeekStats.sent) * 100).toFixed(0) + '%'
-                      : '-'}
-                  </strong>
-                </span>
-                <span>
-                  Reply rate:{' '}
-                  <strong style={{ color: 'var(--text-primary)' }}>
-                    {currentWeekStats && currentWeekStats.accepted > 0
-                      ? ((currentWeekStats.replied / currentWeekStats.accepted) * 100).toFixed(0) +
-                        '%'
-                      : '-'}
-                  </strong>
-                </span>
-              </div>
+                {/* Conversion rates */}
+                <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-muted)' }}>
+                  <span>
+                    Accept rate:{' '}
+                    <strong style={{ color: 'var(--text-primary)' }}>
+                      {currentWeekStats && currentWeekStats.sent > 0
+                        ? ((currentWeekStats.accepted / currentWeekStats.sent) * 100).toFixed(0) + '%'
+                        : '-'}
+                    </strong>
+                  </span>
+                  <span>
+                    Reply rate:{' '}
+                    <strong style={{ color: 'var(--text-primary)' }}>
+                      {currentWeekStats && currentWeekStats.accepted > 0
+                        ? ((currentWeekStats.replied / currentWeekStats.accepted) * 100).toFixed(0) +
+                          '%'
+                        : '-'}
+                    </strong>
+                  </span>
+                </div>
+              </CardContent>
             </Card>
 
             {/* Last 4 weeks table */}
             {pastWeeks.length > 0 && (
-              <Card>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ color: 'var(--text-muted)', textAlign: 'left' }}>
-                      <th style={{ padding: '4px 8px', fontWeight: 500 }}>Week</th>
-                      <th style={{ padding: '4px 8px', fontWeight: 500 }}>Sent</th>
-                      <th style={{ padding: '4px 8px', fontWeight: 500 }}>Acc</th>
-                      <th style={{ padding: '4px 8px', fontWeight: 500 }}>Rep</th>
-                      <th style={{ padding: '4px 8px', fontWeight: 500 }}>Calls</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pastWeeks.map((w) => (
-                      <tr key={w.id} style={{ borderTop: '1px solid var(--border)' }}>
-                        <td style={{ padding: '6px 8px' }}>{formatDate(w.week_starting)}</td>
-                        <td style={{ padding: '6px 8px' }}>{w.sent}</td>
-                        <td style={{ padding: '6px 8px' }}>{w.accepted}</td>
-                        <td style={{ padding: '6px 8px' }}>{w.replied}</td>
-                        <td style={{ padding: '6px 8px' }}>{w.calls_booked}</td>
+              <Card className="bl-card">
+                <CardContent className="p-6">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ color: 'var(--text-muted)', textAlign: 'left' }}>
+                        <th style={{ padding: '4px 8px', fontWeight: 500 }}>Week</th>
+                        <th style={{ padding: '4px 8px', fontWeight: 500 }}>Sent</th>
+                        <th style={{ padding: '4px 8px', fontWeight: 500 }}>Acc</th>
+                        <th style={{ padding: '4px 8px', fontWeight: 500 }}>Rep</th>
+                        <th style={{ padding: '4px 8px', fontWeight: 500 }}>Calls</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {pastWeeks.map((w) => (
+                        <tr key={w.id} style={{ borderTop: '1px solid var(--border)' }}>
+                          <td style={{ padding: '6px 8px' }}>{formatDate(w.week_starting)}</td>
+                          <td style={{ padding: '6px 8px' }}>{w.sent}</td>
+                          <td style={{ padding: '6px 8px' }}>{w.accepted}</td>
+                          <td style={{ padding: '6px 8px' }}>{w.replied}</td>
+                          <td style={{ padding: '6px 8px' }}>{w.calls_booked}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
               </Card>
             )}
           </div>
@@ -980,25 +900,29 @@ export default function GrowthPage() {
               }}
             >
               {campaigns.length === 0 ? (
-                <Card style={{ textAlign: 'center', padding: 32 }}>
-                  <span style={{ color: 'var(--text-muted)' }}>No campaigns yet</span>
+                <Card className="bl-card">
+                  <CardContent className="p-6" style={{ textAlign: 'center' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>No campaigns yet</span>
+                  </CardContent>
                 </Card>
               ) : (
                 campaigns.map((c) => {
                   const statusColor =
                     c.status === 'active' ? GREEN : c.status === 'paused' ? AMBER : 'var(--text-muted)'
                   return (
-                    <Card key={c.id}>
-                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>
-                        {c.name}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                        {c.category && <Tag label={c.category} color={PURPLE} />}
-                        <Tag label={c.status} color={statusColor} />
-                      </div>
-                      {c.description && (
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.description}</div>
-                      )}
+                    <Card key={c.id} className="bl-card">
+                      <CardContent className="p-6">
+                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>
+                          {c.name}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                          {c.category && <Tag label={c.category} color={PURPLE} />}
+                          <Tag label={c.status} color={statusColor} />
+                        </div>
+                        {c.description && (
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.description}</div>
+                        )}
+                      </CardContent>
                     </Card>
                   )
                 })
