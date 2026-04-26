@@ -14,7 +14,11 @@ import FilterBar from '@/components/shared/FilterBar'
 import UploadButton from '@/components/shared/UploadButton'
 import ExportButton from '@/components/shared/ExportButton'
 import SyncSettings from '@/components/shared/SyncSettings'
-import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, X, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, CheckCircle, XCircle, X, Zap, Calendar, ExternalLink, ToggleLeft, ToggleRight, Clock, Send, ChevronDown, Copy, ImageIcon, PenLine } from 'lucide-react'
+import PageHeader from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 
 const AMBER = '#F59E0B'
 const GREEN = '#34D399'
@@ -82,7 +86,7 @@ function Btn({ onClick, children, variant = 'ghost', disabled, small }: { onClic
   return <button onClick={disabled ? undefined : onClick} style={{ ...base, ...variants[variant] }}>{children}</button>
 }
 
-function Card({ children, accent }: { children: React.ReactNode; accent?: string }) {
+function LocalCard({ children, accent }: { children: React.ReactNode; accent?: string }) {
   return <div style={{ background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, borderTop: accent ? `3px solid ${accent}` : '1px solid var(--border)' }}>{children}</div>
 }
 
@@ -154,7 +158,7 @@ function SourcesTab() {
       </div>
 
       {adding && (
-        <Card>
+        <LocalCard>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <Input placeholder="Source name" value={form.name} onChange={v => setForm(f => ({...f, name: v}))} />
             <Input placeholder="RSS feed URL" value={form.url} onChange={v => setForm(f => ({...f, url: v}))} />
@@ -166,7 +170,7 @@ function SourcesTab() {
             <Btn variant="teal" onClick={add} disabled={saving}>{saving ? 'Saving...' : 'Add source'}</Btn>
             <Btn onClick={() => setAdding(false)}>Cancel</Btn>
           </div>
-        </Card>
+        </LocalCard>
       )}
 
       {loading ? (
@@ -382,7 +386,7 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
       {/* Manual form */}
       {showManualForm && (
         <div style={{ marginBottom: 20 }}>
-          <Card accent="var(--accent)">
+          <LocalCard accent="var(--accent)">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)' }}>Add story</label>
               <button onClick={() => { setShowManualForm(false); resetManualForm() }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}><X size={16} /></button>
@@ -423,7 +427,7 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
                 <Btn variant="teal" onClick={handleSaveAndGenerate} disabled={saving || savingAndGenerating}><Zap size={12} />{savingAndGenerating ? 'Saving...' : 'Save & AI draft'}</Btn>
               </div>
             </div>
-          </Card>
+          </LocalCard>
         </div>
       )}
 
@@ -692,7 +696,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
       <div>
         <SectionTitle>Rewrite studio</SectionTitle>
-        <Card>
+        <Card className="bl-card">
           <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--bg-card)', borderRadius: 8, borderLeft: '3px solid var(--accent)' }}>
             <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Story</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{article.original_title}</div>
@@ -747,7 +751,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
 
         {(draft || generating) && (
           <div style={{ marginTop: 16 }}>
-            <Card>
+            <Card className="bl-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Draft post</label>
                 <span style={{ fontSize: 11, color: charCount > 3000 ? RED : charCount > 2500 ? AMBER : 'var(--text-muted)' }}>{charCount} chars {charCount > 3000 ? '(too long)' : ''}</span>
@@ -769,7 +773,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
 
         {/* Image Panel */}
         <div style={{ marginTop: 16 }}>
-          <Card>
+          <Card className="bl-card">
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 12 }}>Article image</label>
             {imageLoading ? (
               <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '40px 20px', textAlign: 'center' }}>
@@ -800,7 +804,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
 
       <div>
         <SectionTitle>Schedule</SectionTitle>
-        <Card>
+        <Card className="bl-card">
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Date</label>
             <Input type="date" value={scheduleDate} onChange={setScheduleDate} />
@@ -820,7 +824,7 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
         </Card>
 
         <div style={{ marginTop: 16 }}>
-          <Card>
+          <Card className="bl-card">
             <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Best posting times</div>
             {[['Tuesday', '8–9am'], ['Wednesday', '12–1pm'], ['Thursday', '5–6pm']].map(([day, time]) => (
               <div key={day} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -1094,7 +1098,15 @@ export default function ContentPage() {
   ]
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div className="bl-page">
+      <PageHeader
+        title="Content Calendar"
+        subtitle="Schedule, draft, and publish content across channels"
+        icon={PenLine}
+        gradientFrom="#4C1D95"
+        gradientTo="#5B21B6"
+        accentColor="#A78BFA"
+      />
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-mid)', padding: 4, borderRadius: 10, width: 'fit-content', border: '1px solid var(--border)' }}>
