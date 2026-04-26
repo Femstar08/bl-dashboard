@@ -15,7 +15,12 @@ import {
   Users,
   CalendarClock,
   CheckCircle2,
+  Smile,
 } from 'lucide-react'
+import PageHeader from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 
 /* ─── Design Tokens (stage-specific only) ─── */
 const AMBER = '#F59E0B'
@@ -121,7 +126,7 @@ function dateStatus(followUp: string | null): 'overdue' | 'soon' | 'normal' | nu
 }
 
 /* ─── Reusable Style Components ─── */
-function Card({ children, style }: { children: React.ReactNode; style?: CSSProperties }) {
+function LocalCard({ children, style }: { children: React.ReactNode; style?: CSSProperties }) {
   return (
     <div
       style={{
@@ -1102,27 +1107,27 @@ export default function AngelPage() {
                   marginTop: 16,
                 }}
               >
-                <Card style={{ padding: 14, textAlign: 'center' }}>
+                <LocalCard style={{ padding: 14, textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <Users size={16} color="var(--accent)" />
                     <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{pipelineCount}</span>
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>investors in pipeline</p>
-                </Card>
-                <Card style={{ padding: 14, textAlign: 'center' }}>
+                </LocalCard>
+                <LocalCard style={{ padding: 14, textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <CalendarClock size={16} color={AMBER} />
                     <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{meetingsBooked}</span>
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>meetings booked</p>
-                </Card>
-                <Card style={{ padding: 14, textAlign: 'center' }}>
+                </LocalCard>
+                <LocalCard style={{ padding: 14, textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <CheckCircle2 size={16} color={GREEN} />
                     <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{committedCount}</span>
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>committed</p>
-                </Card>
+                </LocalCard>
               </div>
 
               {/* Amounts summary */}
@@ -1154,20 +1159,22 @@ export default function AngelPage() {
               </Btn>
 
               {addFormOpen && (
-                <Card>
-                  <form onSubmit={handleAdd}>
-                    {renderFormFields(addForm, setAddForm, false)}
-                    <div style={{ marginTop: 16 }}>
-                      <Btn
-                        variant="teal"
-                        type="submit"
-                        disabled={addSubmitting || !addForm.name.trim()}
-                        style={{ background: 'rgba(83,233,197,0.09)' }}
-                      >
-                        {addSubmitting ? 'Adding...' : 'Add Investor'}
-                      </Btn>
-                    </div>
-                  </form>
+                <Card className="bl-card">
+                  <CardContent className="p-6">
+                    <form onSubmit={handleAdd}>
+                      {renderFormFields(addForm, setAddForm, false)}
+                      <div style={{ marginTop: 16 }}>
+                        <Button
+                          variant="outline"
+                          type="submit"
+                          disabled={addSubmitting || !addForm.name.trim()}
+                          style={{ background: 'rgba(83,233,197,0.09)' }}
+                        >
+                          {addSubmitting ? 'Adding...' : 'Add Investor'}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
                 </Card>
               )}
             </section>
@@ -1177,11 +1184,13 @@ export default function AngelPage() {
               <SectionTitle>Investor Pipeline</SectionTitle>
 
               {investors.length === 0 && (
-                <Card style={{ textAlign: 'center', padding: 40 }}>
-                  <FileText size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
-                  <p style={{ color: 'var(--text-muted)', fontSize: 15, margin: 0 }}>
-                    No investors added yet. Click &lsquo;+ Add Investor&rsquo; to start tracking your angel round.
-                  </p>
+                <Card className="bl-card">
+                  <CardContent className="p-6" style={{ textAlign: 'center' }}>
+                    <FileText size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
+                    <p style={{ color: 'var(--text-muted)', fontSize: 15, margin: 0 }}>
+                      No investors added yet. Click &lsquo;+ Add Investor&rsquo; to start tracking your angel round.
+                    </p>
+                  </CardContent>
                 </Card>
               )}
 
