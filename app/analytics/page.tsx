@@ -16,6 +16,11 @@ import {
   AlertCircle,
   ChevronRight,
 } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { BarChart2 } from 'lucide-react';
 
 // ── Design tokens (accent colours only) ───────────────────────
 const AMBER = '#F59E0B';
@@ -261,14 +266,6 @@ export default function AnalyticsPage() {
   const funnelBooked = weeklyStats.reduce((s, r) => s + (r.calls_booked ?? 0), 0);
 
   // ── Styles ─────────────────────────────────────────────────
-  const card: React.CSSProperties = {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 20,
-  };
-
   const sectionTitle: React.CSSProperties = {
     fontSize: 11,
     fontWeight: 700,
@@ -301,7 +298,15 @@ export default function AnalyticsPage() {
 
   // ── Render ─────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'inherit' }}>
+    <div className="bl-page">
+      <PageHeader
+        title="Analytics"
+        subtitle="Growth metrics and performance tracking"
+        icon={BarChart2}
+        gradientFrom="#0C4A6E"
+        gradientTo="#0369A1"
+        accentColor="#38BDF8"
+      />
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 20px' }}>
         {/* Loading state */}
         {loading && (
@@ -313,18 +318,14 @@ export default function AnalyticsPage() {
 
         {/* Error state */}
         {error && !loading && (
-          <div
-            style={{
-              ...card,
-              borderColor: RED,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <AlertCircle size={20} color={RED} />
-            <span style={{ color: RED, fontSize: 14 }}>{error}</span>
-          </div>
+          <Card className="bl-card" style={{ borderColor: RED }}>
+            <CardContent className="p-6">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <AlertCircle size={20} color={RED} />
+                <span style={{ color: RED, fontSize: 14 }}>{error}</span>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {!loading && !error && (
@@ -336,89 +337,101 @@ export default function AnalyticsPage() {
             </div>
 
             {posts.length === 0 ? (
-              <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 40 }}>
-                No posts logged yet. Add your first post result below.
-              </div>
+              <Card className="bl-card" style={{ marginBottom: 20 }}>
+                <CardContent className="p-6">
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 16 }}>
+                    No posts logged yet. Add your first post result below.
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 24 }}>
                 {/* Best Post */}
-                <div style={card}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <Award size={16} color={AMBER} />
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
-                      Best Post
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 8 }}>
-                    {bestPost ? bestPost.piece.title.slice(0, 60) + (bestPost.piece.title.length > 60 ? '...' : '') : '—'}
-                  </div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>
-                    {bestPost ? fmtNum(bestPost.metrics.impressions) : '0'}{' '}
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>impressions</span>
-                  </div>
-                </div>
+                <Card className="bl-card">
+                  <CardContent className="p-6">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <Award size={16} color={AMBER} />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Best Post
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 8 }}>
+                      {bestPost ? bestPost.piece.title.slice(0, 60) + (bestPost.piece.title.length > 60 ? '...' : '') : '—'}
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>
+                      {bestPost ? fmtNum(bestPost.metrics.impressions) : '0'}{' '}
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>impressions</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Avg Engagement */}
-                <div style={card}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <BarChart3 size={16} color={GREEN} />
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
-                      Avg Engagement
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: GREEN }}>{avgEngagement.toFixed(1)}%</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                    (likes + comments + shares) / impressions
-                  </div>
-                </div>
+                <Card className="bl-card">
+                  <CardContent className="p-6">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <BarChart3 size={16} color={GREEN} />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Avg Engagement
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: GREEN }}>{avgEngagement.toFixed(1)}%</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                      (likes + comments + shares) / impressions
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Posts by Profile */}
-                <div style={card}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <Users size={16} color={PURPLE} />
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
-                      By Profile
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 20 }}>
-                    <div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: PURPLE }}>{femiCount}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Femi</div>
+                <Card className="bl-card">
+                  <CardContent className="p-6">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <Users size={16} color={PURPLE} />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                        By Profile
+                      </span>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{blCount}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>B&amp;L</div>
+                    <div style={{ display: 'flex', gap: 20 }}>
+                      <div>
+                        <div style={{ fontSize: 24, fontWeight: 700, color: PURPLE }}>{femiCount}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Femi</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{blCount}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>B&amp;L</div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* Totals */}
-                <div style={card}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <TrendingUp size={16} color={'var(--accent)'} />
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
-                      Totals
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalLikes)}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Likes</div>
+                <Card className="bl-card">
+                  <CardContent className="p-6">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <TrendingUp size={16} color={'var(--accent)'} />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Totals
+                      </span>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalComments)}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Comments</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalLikes)}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Likes</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalComments)}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Comments</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalShares)}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Shares</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalImpressions)}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Impressions</div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalShares)}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Shares</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(totalImpressions)}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Impressions</div>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
@@ -428,183 +441,153 @@ export default function AnalyticsPage() {
                 <BarChart3 size={13} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                 Post Performance Log
               </div>
-              <button
+              <Button
                 onClick={() => setFormOpen(!formOpen)}
-                style={{
-                  background: 'var(--accent)',
-                  color: 'var(--bg-primary)',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '8px 16px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
               >
                 <Plus size={15} />
                 Add Post Result
-              </button>
+              </Button>
             </div>
 
             {/* Add Post Form */}
             {formOpen && (
-              <div style={{ ...card, marginBottom: 24 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16 }}>Log Post Result</div>
+              <Card className="bl-card" style={{ marginBottom: 24 }}>
+                <CardContent className="p-6">
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16 }}>Log Post Result</div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-                  {/* Platform */}
-                  <div>
-                    <span style={label}>Platform</span>
-                    <select
-                      value={form.platform}
-                      onChange={(e) => setForm({ ...form, platform: e.target.value })}
-                      style={{ ...input, cursor: 'pointer' }}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+                    {/* Platform */}
+                    <div>
+                      <span style={label}>Platform</span>
+                      <select
+                        value={form.platform}
+                        onChange={(e) => setForm({ ...form, platform: e.target.value })}
+                        style={{ ...input, cursor: 'pointer' }}
+                      >
+                        <option value="linkedin">LinkedIn</option>
+                      </select>
+                    </div>
+
+                    {/* Profile */}
+                    <div>
+                      <span style={label}>Profile</span>
+                      <select
+                        value={form.profile}
+                        onChange={(e) => setForm({ ...form, profile: e.target.value })}
+                        style={{ ...input, cursor: 'pointer' }}
+                      >
+                        <option value="Femi">Femi</option>
+                        <option value="B&L">B&amp;L</option>
+                      </select>
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                      <span style={label}>Date</span>
+                      <input
+                        type="date"
+                        value={form.date}
+                        onChange={(e) => setForm({ ...form, date: e.target.value })}
+                        style={input}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Post Excerpt */}
+                  <div style={{ marginTop: 14 }}>
+                    <span style={label}>Post Excerpt</span>
+                    <input
+                      type="text"
+                      placeholder="First 100 characters of the post..."
+                      maxLength={100}
+                      value={form.post_excerpt}
+                      onChange={(e) => setForm({ ...form, post_excerpt: e.target.value })}
+                      style={input}
+                    />
+                  </div>
+
+                  {/* Metrics row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 14, marginTop: 14 }}>
+                    <div>
+                      <span style={label}>Likes</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.likes}
+                        onChange={(e) => setForm({ ...form, likes: Number(e.target.value) })}
+                        style={input}
+                      />
+                    </div>
+                    <div>
+                      <span style={label}>Comments</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.comments}
+                        onChange={(e) => setForm({ ...form, comments: Number(e.target.value) })}
+                        style={input}
+                      />
+                    </div>
+                    <div>
+                      <span style={label}>Shares</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.shares}
+                        onChange={(e) => setForm({ ...form, shares: Number(e.target.value) })}
+                        style={input}
+                      />
+                    </div>
+                    <div>
+                      <span style={label}>Impressions</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.impressions}
+                        onChange={(e) => setForm({ ...form, impressions: Number(e.target.value) })}
+                        style={input}
+                      />
+                    </div>
+                  </div>
+
+                  {submitError && (
+                    <div style={{ color: RED, fontSize: 13, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <AlertCircle size={14} />
+                      {submitError}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={submitting}
                     >
-                      <option value="linkedin">LinkedIn</option>
-                    </select>
-                  </div>
-
-                  {/* Profile */}
-                  <div>
-                    <span style={label}>Profile</span>
-                    <select
-                      value={form.profile}
-                      onChange={(e) => setForm({ ...form, profile: e.target.value })}
-                      style={{ ...input, cursor: 'pointer' }}
+                      {submitting && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />}
+                      {submitting ? 'Saving...' : 'Save Post Result'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setFormOpen(false);
+                        setSubmitError(null);
+                      }}
                     >
-                      <option value="Femi">Femi</option>
-                      <option value="B&L">B&amp;L</option>
-                    </select>
+                      Cancel
+                    </Button>
                   </div>
-
-                  {/* Date */}
-                  <div>
-                    <span style={label}>Date</span>
-                    <input
-                      type="date"
-                      value={form.date}
-                      onChange={(e) => setForm({ ...form, date: e.target.value })}
-                      style={input}
-                    />
-                  </div>
-                </div>
-
-                {/* Post Excerpt */}
-                <div style={{ marginTop: 14 }}>
-                  <span style={label}>Post Excerpt</span>
-                  <input
-                    type="text"
-                    placeholder="First 100 characters of the post..."
-                    maxLength={100}
-                    value={form.post_excerpt}
-                    onChange={(e) => setForm({ ...form, post_excerpt: e.target.value })}
-                    style={input}
-                  />
-                </div>
-
-                {/* Metrics row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 14, marginTop: 14 }}>
-                  <div>
-                    <span style={label}>Likes</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={form.likes}
-                      onChange={(e) => setForm({ ...form, likes: Number(e.target.value) })}
-                      style={input}
-                    />
-                  </div>
-                  <div>
-                    <span style={label}>Comments</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={form.comments}
-                      onChange={(e) => setForm({ ...form, comments: Number(e.target.value) })}
-                      style={input}
-                    />
-                  </div>
-                  <div>
-                    <span style={label}>Shares</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={form.shares}
-                      onChange={(e) => setForm({ ...form, shares: Number(e.target.value) })}
-                      style={input}
-                    />
-                  </div>
-                  <div>
-                    <span style={label}>Impressions</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={form.impressions}
-                      onChange={(e) => setForm({ ...form, impressions: Number(e.target.value) })}
-                      style={input}
-                    />
-                  </div>
-                </div>
-
-                {submitError && (
-                  <div style={{ color: RED, fontSize: 13, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <AlertCircle size={14} />
-                    {submitError}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    style={{
-                      background: 'var(--accent)',
-                      color: 'var(--bg-primary)',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '10px 24px',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      cursor: submitting ? 'not-allowed' : 'pointer',
-                      opacity: submitting ? 0.6 : 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                    }}
-                  >
-                    {submitting && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />}
-                    {submitting ? 'Saving...' : 'Save Post Result'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFormOpen(false);
-                      setSubmitError(null);
-                    }}
-                    style={{
-                      background: 'transparent',
-                      color: 'var(--text-muted)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      padding: '10px 20px',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Post list */}
             {posts.length === 0 ? (
-              <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 40 }}>
-                No posts logged yet. Click &quot;Add Post Result&quot; to start tracking.
-              </div>
+              <Card className="bl-card" style={{ marginBottom: 32 }}>
+                <CardContent className="p-6">
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 16 }}>
+                    No posts logged yet. Click &quot;Add Post Result&quot; to start tracking.
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
                 {posts.map((p) => {
@@ -619,73 +602,67 @@ export default function AnalyticsPage() {
                       : '0.0';
 
                   return (
-                    <div key={p.piece.id} style={card}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-                        <div style={{ flex: 1, minWidth: 200 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                            <span
+                    <Card key={p.piece.id} className="bl-card">
+                      <CardContent className="p-6">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1, minWidth: 200 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                              <Badge
+                                style={{
+                                  background: (p.piece.platform === 'linkedin' ? '#0A66C2' : 'var(--accent)') + '22',
+                                  color: p.piece.platform === 'linkedin' ? '#0A66C2' : 'var(--accent)',
+                                  border: 'none',
+                                }}
+                              >
+                                {p.piece.platform}
+                              </Badge>
+                              <Badge
+                                style={{
+                                  background: (profile === 'Femi' ? PURPLE : 'var(--accent)') + '22',
+                                  color: profile === 'Femi' ? PURPLE : 'var(--accent)',
+                                  border: 'none',
+                                }}
+                              >
+                                {profile}
+                              </Badge>
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{dateStr}</span>
+                            </div>
+                            <div style={{ fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                              {p.piece.title.slice(0, 100)}{p.piece.title.length > 100 ? '...' : ''}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 16, flexShrink: 0, alignItems: 'center' }}>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.likes)}</div>
+                              <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Likes</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.comments)}</div>
+                              <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Comments</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.shares)}</div>
+                              <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Shares</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>{fmtNum(p.metrics.impressions)}</div>
+                              <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Impressions</div>
+                            </div>
+                            <div
                               style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                letterSpacing: 1,
-                                color: 'var(--bg-primary)',
-                                background: p.piece.platform === 'linkedin' ? '#0A66C2' : 'var(--accent)',
-                                padding: '2px 8px',
-                                borderRadius: 4,
+                                textAlign: 'center',
+                                background: 'var(--bg-mid)',
+                                borderRadius: 8,
+                                padding: '6px 12px',
                               }}
                             >
-                              {p.piece.platform}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                color: profile === 'Femi' ? PURPLE : 'var(--accent)',
-                                border: `1px solid ${profile === 'Femi' ? PURPLE : 'var(--accent)'}`,
-                                padding: '2px 8px',
-                                borderRadius: 4,
-                              }}
-                            >
-                              {profile}
-                            </span>
-                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{dateStr}</span>
-                          </div>
-                          <div style={{ fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                            {p.piece.title.slice(0, 100)}{p.piece.title.length > 100 ? '...' : ''}
+                              <div style={{ fontSize: 14, fontWeight: 700, color: GREEN }}>{engagement}%</div>
+                              <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Eng Rate</div>
+                            </div>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 16, flexShrink: 0, alignItems: 'center' }}>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.likes)}</div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Likes</div>
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.comments)}</div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Comments</div>
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtNum(p.metrics.shares)}</div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Shares</div>
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>{fmtNum(p.metrics.impressions)}</div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Impressions</div>
-                          </div>
-                          <div
-                            style={{
-                              textAlign: 'center',
-                              background: 'var(--bg-mid)',
-                              borderRadius: 8,
-                              padding: '6px 12px',
-                            }}
-                          >
-                            <div style={{ fontSize: 14, fontWeight: 700, color: GREEN }}>{engagement}%</div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Eng Rate</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>
@@ -698,70 +675,76 @@ export default function AnalyticsPage() {
             </div>
 
             {weeklyStats.length === 0 ? (
-              <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 40 }}>
-                No outreach data found in bl_weekly_stats.
-              </div>
+              <Card className="bl-card">
+                <CardContent className="p-6">
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, padding: 16 }}>
+                    No outreach data found in bl_weekly_stats.
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
-              <div style={card}>
-                {/* Funnel bars */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {[
-                    { label: 'Sent', value: funnelSent, icon: <Send size={15} color={'var(--text-primary)'} />, color: 'var(--text-primary)' },
-                    { label: 'Accepted', value: funnelAccepted, icon: <UserCheck size={15} color={'var(--accent)'} />, color: 'var(--accent)' },
-                    { label: 'Replied', value: funnelReplied, icon: <MessageSquare size={15} color={PURPLE} />, color: PURPLE },
-                    { label: 'Calls Booked', value: funnelBooked, icon: <Phone size={15} color={GREEN} />, color: GREEN },
-                  ].map((stage) => {
-                    const widthPct = funnelSent > 0 ? Math.max((stage.value / funnelSent) * 100, 8) : 0;
-                    return (
-                      <div key={stage.label}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                          {stage.icon}
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, width: 100 }}>{stage.label}</span>
-                          <span style={{ fontSize: 18, fontWeight: 700, color: stage.color }}>{fmtNum(stage.value)}</span>
+              <Card className="bl-card">
+                <CardContent className="p-6">
+                  {/* Funnel bars */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {[
+                      { label: 'Sent', value: funnelSent, icon: <Send size={15} color={'var(--text-primary)'} />, color: 'var(--text-primary)' },
+                      { label: 'Accepted', value: funnelAccepted, icon: <UserCheck size={15} color={'var(--accent)'} />, color: 'var(--accent)' },
+                      { label: 'Replied', value: funnelReplied, icon: <MessageSquare size={15} color={PURPLE} />, color: PURPLE },
+                      { label: 'Calls Booked', value: funnelBooked, icon: <Phone size={15} color={GREEN} />, color: GREEN },
+                    ].map((stage) => {
+                      const widthPct = funnelSent > 0 ? Math.max((stage.value / funnelSent) * 100, 8) : 0;
+                      return (
+                        <div key={stage.label}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                            {stage.icon}
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, width: 100 }}>{stage.label}</span>
+                            <span style={{ fontSize: 18, fontWeight: 700, color: stage.color }}>{fmtNum(stage.value)}</span>
+                          </div>
+                          <div style={{ background: 'var(--bg-mid)', borderRadius: 6, height: 28, width: '100%', position: 'relative', overflow: 'hidden' }}>
+                            <div
+                              style={{
+                                background: stage.color,
+                                opacity: 0.25,
+                                height: '100%',
+                                width: `${widthPct}%`,
+                                borderRadius: 6,
+                                transition: 'width 0.4s ease',
+                              }}
+                            />
+                          </div>
                         </div>
-                        <div style={{ background: 'var(--bg-mid)', borderRadius: 6, height: 28, width: '100%', position: 'relative', overflow: 'hidden' }}>
-                          <div
-                            style={{
-                              background: stage.color,
-                              opacity: 0.25,
-                              height: '100%',
-                              width: `${widthPct}%`,
-                              borderRadius: 6,
-                              transition: 'width 0.4s ease',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
 
-                {/* Conversion rates */}
-                <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-                  {[
-                    { from: 'Sent', to: 'Accepted', rate: pct(funnelAccepted, funnelSent), color: 'var(--accent)' },
-                    { from: 'Accepted', to: 'Replied', rate: pct(funnelReplied, funnelAccepted), color: PURPLE },
-                    { from: 'Replied', to: 'Booked', rate: pct(funnelBooked, funnelReplied), color: GREEN },
-                  ].map((conv) => (
-                    <div
-                      key={conv.from + conv.to}
-                      style={{
-                        flex: 1,
-                        minWidth: 140,
-                        background: 'var(--bg-mid)',
-                        borderRadius: 8,
-                        padding: '12px 16px',
-                        textAlign: 'center',
-                      }}
-                    >
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                        {conv.from} <ChevronRight size={10} /> {conv.to}
+                  {/* Conversion rates */}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
+                    {[
+                      { from: 'Sent', to: 'Accepted', rate: pct(funnelAccepted, funnelSent), color: 'var(--accent)' },
+                      { from: 'Accepted', to: 'Replied', rate: pct(funnelReplied, funnelAccepted), color: PURPLE },
+                      { from: 'Replied', to: 'Booked', rate: pct(funnelBooked, funnelReplied), color: GREEN },
+                    ].map((conv) => (
+                      <div
+                        key={conv.from + conv.to}
+                        style={{
+                          flex: 1,
+                          minWidth: 140,
+                          background: 'var(--bg-mid)',
+                          borderRadius: 8,
+                          padding: '12px 16px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                          {conv.from} <ChevronRight size={10} /> {conv.to}
+                        </div>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: conv.color }}>{conv.rate}</div>
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 700, color: conv.color }}>{conv.rate}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </>
         )}
