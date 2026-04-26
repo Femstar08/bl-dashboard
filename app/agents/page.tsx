@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback, CSSProperties } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Plus, X, CheckCircle, Trash2, GripVertical } from 'lucide-react'
+import PageHeader from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { Bot } from 'lucide-react'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 
@@ -216,78 +221,64 @@ export default function AgentsPage() {
   const activeCount = tasks.filter(t => t.status !== 'Done' && t.status !== 'Cancelled').length
 
   return (
-    <div style={{ padding: '24px 24px 48px', maxWidth: 1200, margin: '0 auto', fontFamily: 'inherit' }}>
+    <div className="bl-page">
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em' }}>
-            Agents
-          </h1>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-            {activeCount} active task{activeCount !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          style={{
-            background: 'var(--accent)', color: 'var(--bg-primary)', border: 'none',
-            borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6,
-          }}
-        >
-          <Plus size={14} /> Add Task
-        </button>
-      </div>
+      <PageHeader
+        title="Agents"
+        subtitle={`${activeCount} active task${activeCount !== 1 ? 's' : ''}`}
+        icon={Bot}
+        gradientFrom="#0F1B35"
+        gradientTo="#162240"
+        accentColor="#7C8CF8"
+        actions={
+          <Button onClick={() => setShowAdd(!showAdd)} size="sm">
+            <Plus size={14} className="mr-1" /> Add Task
+          </Button>
+        }
+      />
 
       {/* Add task form */}
       {showAdd && (
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: 20, marginBottom: 24,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>New Task</span>
-            <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input
-              value={newTitle} onChange={e => setNewTitle(e.target.value)}
-              placeholder="What needs to be done?"
-              style={input}
-              onKeyDown={e => e.key === 'Enter' && createTask()}
-              autoFocus
-            />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <select value={newAssignee} onChange={e => setNewAssignee(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
-                {AGENTS.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-              <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+        <Card className="bl-card mb-6">
+          <CardContent className="p-6">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>New Task</span>
+              <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
             </div>
-            <textarea
-              value={newDesc} onChange={e => setNewDesc(e.target.value)}
-              placeholder="Description (optional)"
-              rows={2} style={{ ...input, resize: 'vertical' }}
-            />
-            <button
-              onClick={createTask}
-              disabled={submitting || !newTitle.trim()}
-              style={{
-                background: 'var(--accent)', color: 'var(--bg-primary)', border: 'none',
-                borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600,
-                cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                opacity: submitting || !newTitle.trim() ? 0.5 : 1,
-              }}
-            >
-              {submitting ? 'Creating...' : 'Create'}
-            </button>
-          </div>
-        </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <input
+                value={newTitle} onChange={e => setNewTitle(e.target.value)}
+                placeholder="What needs to be done?"
+                style={input}
+                onKeyDown={e => e.key === 'Enter' && createTask()}
+                autoFocus
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <select value={newAssignee} onChange={e => setNewAssignee(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+                  {AGENTS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+                <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <textarea
+                value={newDesc} onChange={e => setNewDesc(e.target.value)}
+                placeholder="Description (optional)"
+                rows={2} style={{ ...input, resize: 'vertical' }}
+              />
+              <Button
+                onClick={createTask}
+                disabled={submitting || !newTitle.trim()}
+              >
+                {submitting ? 'Creating...' : 'Create'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Kanban */}
@@ -316,10 +307,9 @@ export default function AgentsPage() {
               {/* Column header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 8px' }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: COL_COLORS[col] }}>{col}</span>
-                <span style={{
-                  fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10,
-                  background: `${COL_COLORS[col]}15`, color: COL_COLORS[col],
-                }}>{items.length}</span>
+                <Badge style={{ background: `${COL_COLORS[col]}15`, color: COL_COLORS[col], border: 'none', fontSize: 10, fontWeight: 600 }}>
+                  {items.length}
+                </Badge>
               </div>
 
               {/* Cards */}
@@ -347,17 +337,20 @@ export default function AgentsPage() {
                         {task.title}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{
-                          fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 10,
-                          background: `${agentColor}15`, color: agentColor,
-                        }}>{task.assigned_to}</span>
+                        <Badge style={{ background: `${agentColor}15`, color: agentColor, border: 'none', fontSize: 10, fontWeight: 600 }}>
+                          {task.assigned_to}
+                        </Badge>
                         {task.priority !== 'normal' && (
-                          <span style={{
-                            fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 10,
+                          <Badge style={{
                             background: task.priority === 'urgent' ? '#F8717115' : task.priority === 'high' ? '#F59E0B15' : 'var(--bg-card)',
                             color: task.priority === 'urgent' ? '#F87171' : task.priority === 'high' ? '#F59E0B' : 'var(--text-muted)',
+                            border: 'none',
+                            fontSize: 10,
+                            fontWeight: 600,
                             textTransform: 'capitalize',
-                          }}>{task.priority}</span>
+                          }}>
+                            {task.priority}
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -386,16 +379,22 @@ export default function AgentsPage() {
             }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Task</span>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={() => { updateStatus(selected.id, 'Done'); }} style={{
-                  background: '#34D39915', color: '#34D399', border: '1px solid #34D39930',
-                  borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
-                }}><CheckCircle size={12} /> Done</button>
-                <button onClick={() => deleteTask(selected.id)} style={{
-                  background: '#F8717115', color: '#F87171', border: '1px solid #F8717130',
-                  borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
-                }}><Trash2 size={12} /></button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateStatus(selected.id, 'Done')}
+                  style={{ color: '#34D399', borderColor: '#34D39930', background: '#34D39915' }}
+                >
+                  <CheckCircle size={12} className="mr-1" /> Done
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => deleteTask(selected.id)}
+                  style={{ color: '#F87171', borderColor: '#F8717130', background: '#F8717115' }}
+                >
+                  <Trash2 size={12} />
+                </Button>
                 <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={18} /></button>
               </div>
             </div>
@@ -443,18 +442,13 @@ export default function AgentsPage() {
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Notes</label>
                 <textarea value={editFields.notes || ''} onChange={e => setEditFields(prev => ({ ...prev, notes: e.target.value }))} rows={3} style={{ ...input, resize: 'vertical' }} />
               </div>
-              <button
+              <Button
                 onClick={saveEdits}
                 disabled={saving}
-                style={{
-                  background: 'var(--accent)', color: 'var(--bg-primary)', border: 'none',
-                  borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600,
-                  cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                  opacity: saving ? 0.5 : 1, marginTop: 4,
-                }}
+                className="mt-1"
               >
                 {saving ? 'Saving...' : 'Save'}
-              </button>
+              </Button>
 
               {/* Metadata */}
               {selected.created_at && (
