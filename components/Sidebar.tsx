@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, BarChart2, TrendingUp, Users, Smile,
   PenLine, List, Bot, Activity, FileText, Sun, Moon, LogOut,
@@ -52,6 +52,17 @@ export default function Sidebar() {
   const [pinned, setPinned] = useState(false)
 
   const isOpen = pinned || hovered
+
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null)
+    })
+  }, [])
+
+  const userInitial = userEmail ? userEmail[0].toUpperCase() : '?'
+  const displayName = userEmail ? userEmail.split('@')[0] : 'User'
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -157,60 +168,93 @@ export default function Sidebar() {
         <Separator className="bg-[var(--border)]" />
 
         {/* Footer */}
-        <div className={cn('flex items-center gap-2 p-3', isOpen ? 'justify-between' : 'flex-col')}>
-          {/* Theme pill */}
-          <div className="flex rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-[2px] gap-[2px]">
-            <button
-              onClick={() => setTheme('light')}
-              aria-label="Light mode"
-              className={cn(
-                'flex h-6 w-6 items-center justify-center rounded transition-colors',
-                theme === 'light'
-                  ? 'bg-[var(--accent)] text-[var(--bg-primary)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              )}
-            >
-              <Sun size={11} />
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              aria-label="Dark mode"
-              className={cn(
-                'flex h-6 w-6 items-center justify-center rounded transition-colors',
-                theme === 'dark'
-                  ? 'bg-[var(--accent)] text-[var(--bg-primary)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              )}
-            >
-              <Moon size={11} />
-            </button>
-          </div>
-
-          {/* Sign out (expanded only) */}
-          {isOpen && (
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
-            >
-              <LogOut size={11} />
-              Sign out
-            </button>
-          )}
-
-          {/* Sign out icon (collapsed) */}
-          {!isOpen && (
+        <div className={cn('flex items-center gap-2 p-3', isOpen ? 'flex-col items-stretch' : 'flex-col items-center')}>
+          {/* User info */}
+          {isOpen ? (
+            <div className="flex items-center gap-2 rounded-lg px-1 py-1">
+              <div
+                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold"
+                style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
+              >
+                {userInitial}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{displayName}</span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)] opacity-60">Team</span>
+              </div>
+            </div>
+          ) : (
             <Tooltip>
               <TooltipTrigger>
-                <button
-                  onClick={handleLogout}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
+                <div
+                  className="flex h-7 w-7 cursor-default items-center justify-center rounded-full text-[11px] font-extrabold"
+                  style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
                 >
-                  <LogOut size={13} />
-                </button>
+                  {userInitial}
+                </div>
               </TooltipTrigger>
-              <TooltipContent side="right">Sign out</TooltipContent>
+              <TooltipContent side="right">{displayName}</TooltipContent>
             </Tooltip>
           )}
+
+          <Separator className="bg-[var(--border)]" />
+
+          {/* Theme pill + sign out row */}
+          <div className={cn('flex items-center gap-2', isOpen ? 'justify-between' : 'flex-col')}>
+            {/* Theme pill */}
+            <div className="flex rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-[2px] gap-[2px]">
+              <button
+                onClick={() => setTheme('light')}
+                aria-label="Light mode"
+                className={cn(
+                  'flex h-6 w-6 items-center justify-center rounded transition-colors',
+                  theme === 'light'
+                    ? 'bg-[var(--accent)] text-[var(--bg-primary)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                )}
+              >
+                <Sun size={11} />
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                aria-label="Dark mode"
+                className={cn(
+                  'flex h-6 w-6 items-center justify-center rounded transition-colors',
+                  theme === 'dark'
+                    ? 'bg-[var(--accent)] text-[var(--bg-primary)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                )}
+              >
+                <Moon size={11} />
+              </button>
+            </div>
+
+            {/* Sign out (expanded only) */}
+            {isOpen && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+              >
+                <LogOut size={11} />
+                Sign out
+              </button>
+            )}
+
+            {/* Sign out icon (collapsed) */}
+            {!isOpen && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <button
+                    onClick={handleLogout}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
+                  >
+                    <LogOut size={13} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Sign out</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </aside>
     </TooltipProvider>
