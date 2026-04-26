@@ -75,16 +75,6 @@ function Tag({ label, color }: { label: string; color: string }) {
   return <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: 99, background: color + '22', color }}>{label}</span>
 }
 
-function Btn({ onClick, children, variant = 'ghost', disabled, small }: { onClick?: () => void; children: React.ReactNode; variant?: 'ghost'|'teal'|'danger'|'amber'; disabled?: boolean; small?: boolean }) {
-  const base: React.CSSProperties = { cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8, border: '1.5px solid', transition: 'opacity 0.15s', opacity: disabled ? 0.4 : 1, fontSize: small ? 11 : 13, fontWeight: 500, padding: small ? '4px 10px' : '8px 16px', background: 'transparent' }
-  const variants = {
-    ghost: { borderColor: 'var(--border)', color: 'var(--text-primary)' },
-    teal:  { borderColor: 'var(--accent)', color: 'var(--accent)' },
-    danger:{ borderColor: RED + '66', color: RED },
-    amber: { borderColor: AMBER + '66', color: AMBER },
-  }
-  return <button onClick={disabled ? undefined : onClick} style={{ ...base, ...variants[variant] }}>{children}</button>
-}
 
 function LocalCard({ children, accent }: { children: React.ReactNode; accent?: string }) {
   return <div style={{ background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, borderTop: accent ? `3px solid ${accent}` : '1px solid var(--border)' }}>{children}</div>
@@ -152,8 +142,8 @@ function SourcesTab() {
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -10 }}>{active} active · {sources.length} total · n8n fetches active sources daily</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Btn variant="ghost" onClick={load} small><RefreshCw size={12} /> Refresh</Btn>
-          <Btn variant="teal" onClick={() => setAdding(a => !a)} small><Plus size={12} /> Add source</Btn>
+          <Button variant="outline" size="sm" onClick={load}><RefreshCw size={12} /> Refresh</Button>
+          <Button size="sm" onClick={() => setAdding(a => !a)}><Plus size={12} /> Add source</Button>
         </div>
       </div>
 
@@ -167,8 +157,8 @@ function SourcesTab() {
             <div style={{ gridColumn: '1/-1' }}><Input placeholder="Notes (optional)" value={form.notes} onChange={v => setForm(f => ({...f, notes: v}))} /></div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Btn variant="teal" onClick={add} disabled={saving}>{saving ? 'Saving...' : 'Add source'}</Btn>
-            <Btn onClick={() => setAdding(false)}>Cancel</Btn>
+            <Button onClick={add} disabled={saving}>{saving ? 'Saving...' : 'Add source'}</Button>
+            <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
           </div>
         </LocalCard>
       )}
@@ -378,8 +368,8 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -10 }}>{totalCount} stories · drag cards between stages</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Btn variant="ghost" onClick={loadAll} small><RefreshCw size={12} /> Refresh</Btn>
-          <Btn variant="teal" onClick={() => setShowManualForm(v => !v)} small><Plus size={12} /> Add story</Btn>
+          <Button variant="outline" size="sm" onClick={loadAll}><RefreshCw size={12} /> Refresh</Button>
+          <Button size="sm" onClick={() => setShowManualForm(v => !v)}><Plus size={12} /> Add story</Button>
         </div>
       </div>
 
@@ -423,8 +413,8 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
               </div>
               {manualError && <div style={{ padding: '8px 12px', background: RED_BG, border: `1px solid ${RED}33`, borderRadius: 8, fontSize: 12, color: RED }}>{manualError}</div>}
               <div style={{ display: 'flex', gap: 8 }}>
-                <Btn variant="ghost" onClick={handleSaveToQueue} disabled={saving || savingAndGenerating}>{saving ? 'Saving...' : 'Save to queue'}</Btn>
-                <Btn variant="teal" onClick={handleSaveAndGenerate} disabled={saving || savingAndGenerating}><Zap size={12} />{savingAndGenerating ? 'Saving...' : 'Save & AI draft'}</Btn>
+                <Button variant="outline" onClick={handleSaveToQueue} disabled={saving || savingAndGenerating}>{saving ? 'Saving...' : 'Save to queue'}</Button>
+                <Button onClick={handleSaveAndGenerate} disabled={saving || savingAndGenerating}><Zap size={12} />{savingAndGenerating ? 'Saving...' : 'Save & AI draft'}</Button>
               </div>
             </div>
           </LocalCard>
@@ -545,10 +535,10 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
                               <input type="time" value={inlineTime} onChange={e => setInlineTime(e.target.value)} style={{ width: 78, background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', padding: '6px 8px', fontSize: 11, outline: 'none', fontFamily: 'inherit' }} />
                             </div>
                             <div style={{ display: 'flex', gap: 6 }}>
-                              <Btn variant="teal" onClick={() => approveInline(article)} disabled={!inlineDate || inlineScheduling} small>
+                              <Button size="sm" onClick={() => approveInline(article)} disabled={!inlineDate || inlineScheduling}>
                                 <CheckCircle size={11} />{inlineScheduling ? 'Saving…' : 'Approve'}
-                              </Btn>
-                              <Btn variant="ghost" onClick={() => setExpandedId(null)} small disabled={inlineScheduling}>Cancel</Btn>
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => setExpandedId(null)} disabled={inlineScheduling}>Cancel</Button>
                             </div>
                           </div>
                         )}
@@ -556,11 +546,11 @@ function QueueTab({ onApprove, onSaveAndGenerate }: { onApprove: (article: Incom
                         {!isExpanded && (
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
                             {col.status === 'Fetched' && (
-                              <Btn variant="teal" onClick={() => onApprove(article)} small><Zap size={11} /> AI draft</Btn>
+                              <Button size="sm" onClick={() => onApprove(article)}><Zap size={11} /> AI draft</Button>
                             )}
-                            <Btn variant="ghost" onClick={() => openExpand(article)} small>
+                            <Button variant="outline" size="sm" onClick={() => openExpand(article)}>
                               <Send size={11} /> {article.ai_rewrite ? 'Edit & approve' : 'Write & approve'}
-                            </Btn>
+                            </Button>
                             <button onClick={() => skipArticle(article)} title="Remove" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 6px', display: 'flex', alignItems: 'center', borderRadius: 4 }}>
                               <X size={12} />
                             </button>
@@ -744,9 +734,9 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
             <textarea value={previousPost} onChange={e => setPreviousPost(e.target.value)} placeholder="Paste your most recent post here. Claude will write this as a natural follow-up..." rows={4} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
           </div>
 
-          <Btn variant="teal" onClick={() => generate()} disabled={generating}>
+          <Button onClick={() => generate()} disabled={generating}>
             <Zap size={14} />{generating ? 'Generating...' : 'Generate draft'}
-          </Btn>
+          </Button>
         </Card>
 
         {(draft || generating) && (
@@ -759,12 +749,12 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
               <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={16} placeholder={generating ? 'Generating...' : 'Draft will appear here...'} style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '12px', fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.7 }} />
               {draft && !generating && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <Btn variant="ghost" onClick={() => { navigator.clipboard.writeText(draft); setDraftCopied(true); setTimeout(() => setDraftCopied(false), 2000) }} small>
+                  <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(draft); setDraftCopied(true); setTimeout(() => setDraftCopied(false), 2000) }}>
                     <Copy size={12} /> {draftCopied ? 'Copied!' : 'Copy to clipboard'}
-                  </Btn>
-                  <Btn variant="ghost" onClick={() => generate(true)} small>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => generate(true)}>
                     <RefreshCw size={12} /> Regenerate — different angle
-                  </Btn>
+                  </Button>
                 </div>
               )}
             </Card>
@@ -784,16 +774,16 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
                 <img src={imageUrl} alt="Generated article image" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 8, display: 'block', marginBottom: 12 }} />
                 {imagePrompt && <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 12 }}>{imagePrompt}</p>}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn variant="ghost" onClick={() => generateImage(true)} small><RefreshCw size={12} /> Regenerate</Btn>
-                  <Btn variant="ghost" onClick={copyPrompt} small><Copy size={12} /> {imageCopied ? 'Copied!' : 'Copy prompt'}</Btn>
-                  <Btn variant="danger" onClick={() => { setImageUrl(''); setImagePrompt('') }} small><XCircle size={12} /> Remove</Btn>
+                  <Button variant="outline" size="sm" onClick={() => generateImage(true)}><RefreshCw size={12} /> Regenerate</Button>
+                  <Button variant="outline" size="sm" onClick={copyPrompt}><Copy size={12} /> {imageCopied ? 'Copied!' : 'Copy prompt'}</Button>
+                  <Button variant="destructive" size="sm" onClick={() => { setImageUrl(''); setImagePrompt('') }}><XCircle size={12} /> Remove</Button>
                 </div>
               </div>
             ) : (
               <div style={{ border: '2px dashed var(--border)', borderRadius: 8, padding: '32px 20px', textAlign: 'center' }}>
                 <ImageIcon size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 10px', opacity: 0.4 }} />
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>No image — post will be text-only</p>
-                <Btn variant="teal" onClick={() => generateImage(false)} small><Zap size={12} /> Generate image</Btn>
+                <Button size="sm" onClick={() => generateImage(false)}><Zap size={12} /> Generate image</Button>
               </div>
             )}
           </Card>
@@ -817,9 +807,9 @@ function StudioTab({ article, onScheduled }: { article: IncomingArticle | null; 
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Posting as</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: PROFILE_LABELS[profile]?.color || 'var(--accent)' }}>{PROFILE_LABELS[profile]?.label}</div>
           </div>
-          <Btn variant="teal" onClick={schedule} disabled={!draft.trim() || !scheduleDate || scheduling}>
+          <Button onClick={schedule} disabled={!draft.trim() || !scheduleDate || scheduling}>
             <Calendar size={14} />{scheduling ? 'Scheduling...' : 'Approve & schedule'}
-          </Btn>
+          </Button>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.5 }}>n8n checks hourly and posts at the scheduled time via LinkedIn API</p>
         </Card>
 
@@ -868,7 +858,7 @@ function ScheduledTab() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <SectionTitle>Scheduled posts</SectionTitle>
-        <Btn variant="ghost" onClick={load} small><RefreshCw size={12} /> Refresh</Btn>
+        <Button variant="outline" size="sm" onClick={load}><RefreshCw size={12} /> Refresh</Button>
       </div>
       {loading ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading...</p> :
         posts.length === 0 ? (
@@ -897,7 +887,7 @@ function ScheduledTab() {
                         )}
                       </div>
                     </div>
-                    <Btn variant="danger" onClick={() => unschedule(post.id)} small><XCircle size={11} /> Unschedule</Btn>
+                    <Button variant="destructive" size="sm" onClick={() => unschedule(post.id)}><XCircle size={11} /> Unschedule</Button>
                   </div>
                   {post.ai_rewrite && (
                     <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 12, fontSize: 12, color: 'var(--text-primary)', opacity: 0.7, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
