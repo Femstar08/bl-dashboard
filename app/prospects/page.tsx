@@ -18,6 +18,10 @@ import {
   XCircle,
   ArrowRightCircle,
 } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 
 const AMBER = '#F59E0B';
 const GREEN = '#34D399';
@@ -346,41 +350,28 @@ export default function ProspectsPage() {
           <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 0 20px', fontFamily: 'inherit' }}>
             {error}
           </p>
-          <button
-            onClick={fetchProspects}
-            style={{
-              backgroundColor: 'var(--accent)',
-              color: 'var(--bg-primary)',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 24px',
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
+          <Button onClick={fetchProspects}>
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+    <div className="bl-page">
+      <PageHeader
+        title="Prospects"
+        subtitle="LinkedIn outreach and lead tracking"
+        icon={Users}
+        gradientFrom="#1E3A5F"
+        gradientTo="#1E40AF"
+        accentColor="#60A5FA"
+      />
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 32px' }}>
         {prospects.length === 0 ? (
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: 48,
-              textAlign: 'center',
-              marginTop: 40,
-            }}
-          >
+          <Card className="bl-card" style={{ marginTop: 40, textAlign: 'center' }}>
+            <CardContent className="p-12">
             <Building2
               size={48}
               style={{ color: 'var(--text-muted)', marginBottom: 16 }}
@@ -391,7 +382,8 @@ export default function ProspectsPage() {
             <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0, fontFamily: 'inherit' }}>
               The CompanyQuery pipeline will populate this page.
             </p>
-          </div>
+            </CardContent>
+          </Card>
         ) : (
           <>
             {/* Filter Bar */}
@@ -480,15 +472,8 @@ export default function ProspectsPage() {
 
             {/* Section C: Trigger Type Breakdown */}
             {triggerBreakdown.length > 0 && (
-              <div
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 12,
-                  padding: 20,
-                  marginBottom: 24,
-                }}
-              >
+              <Card className="bl-card" style={{ marginBottom: 24 }}>
+              <CardContent className="p-5">
                 <h3
                   style={{
                     margin: '0 0 16px',
@@ -554,7 +539,8 @@ export default function ProspectsPage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </CardContent>
+              </Card>
             )}
 
             {/* Section A: Prospect Queue */}
@@ -584,15 +570,8 @@ export default function ProspectsPage() {
                       : prospect.next_action || '';
 
                   return (
-                    <div
-                      key={prospect.id}
-                      style={{
-                        backgroundColor: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 12,
-                        padding: 20,
-                      }}
-                    >
+                    <Card key={prospect.id} className="bl-card">
+                    <CardContent className="p-6">
                       {/* Card Header */}
                       <div
                         style={{
@@ -660,51 +639,19 @@ export default function ProspectsPage() {
                           }}
                         >
                           {prospect.bl_score !== null && (
-                            <span
-                              style={{
-                                backgroundColor: getScoreBadgeColor(prospect.bl_score),
-                                color: 'var(--bg-primary)',
-                                fontWeight: 700,
-                                fontSize: 13,
-                                padding: '3px 10px',
-                                borderRadius: 6,
-                                fontFamily: 'inherit',
-                              }}
-                            >
+                            <Badge style={{ background: getScoreBadgeColor(prospect.bl_score) + '22', color: getScoreBadgeColor(prospect.bl_score), border: 'none' }}>
                               Score: {prospect.bl_score}
-                            </span>
+                            </Badge>
                           )}
                           {prospect.bl_priority && (
-                            <span
-                              style={{
-                                backgroundColor: getPriorityColor(prospect.bl_priority),
-                                color: 'var(--bg-primary)',
-                                fontWeight: 600,
-                                fontSize: 12,
-                                padding: '3px 10px',
-                                borderRadius: 6,
-                                textTransform: 'capitalize',
-                                fontFamily: 'inherit',
-                              }}
-                            >
+                            <Badge style={{ background: getPriorityColor(prospect.bl_priority) + '22', color: getPriorityColor(prospect.bl_priority), border: 'none', textTransform: 'capitalize' }}>
                               {prospect.bl_priority}
-                            </span>
+                            </Badge>
                           )}
                           {prospect.trigger_type && (
-                            <span
-                              style={{
-                                border: '1px solid var(--accent)',
-                                color: 'var(--accent)',
-                                fontSize: 12,
-                                fontWeight: 500,
-                                padding: '3px 10px',
-                                borderRadius: 6,
-                                textTransform: 'capitalize',
-                                fontFamily: 'inherit',
-                              }}
-                            >
+                            <Badge variant="outline" style={{ textTransform: 'capitalize' }}>
                               {prospect.trigger_type.replace(/_/g, ' ')}
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -738,20 +685,11 @@ export default function ProspectsPage() {
                       {/* Reason / Notes (Expandable) */}
                       {reasonText && (
                         <div style={{ marginBottom: 12 }}>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => toggleReason(prospect.id)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--accent)',
-                              fontSize: 13,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: 0,
-                              fontFamily: 'inherit',
-                            }}
+                            className="p-0 h-auto text-[var(--accent)] hover:bg-transparent"
                           >
                             {isExpanded ? (
                               <ChevronUp size={14} />
@@ -759,7 +697,7 @@ export default function ProspectsPage() {
                               <ChevronDown size={14} />
                             )}
                             {isExpanded ? 'Hide reason' : 'Show reason'}
-                          </button>
+                          </Button>
                           {isExpanded && (
                             <p
                               style={{
@@ -883,21 +821,7 @@ export default function ProspectsPage() {
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            backgroundColor: 'transparent',
-                            color: 'var(--accent)',
-                            border: '1px solid var(--accent)',
-                            borderRadius: 6,
-                            padding: '6px 14px',
-                            fontSize: 13,
-                            fontWeight: 500,
-                            textDecoration: 'none',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
+                          className={buttonVariants({ variant: 'outline', size: 'sm' })}
                         >
                           <Linkedin size={14} />
                           Find on LinkedIn
@@ -908,21 +832,7 @@ export default function ProspectsPage() {
                             href={`https://find-and-update.company-information.service.gov.uk/company/${prospect.company_number}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              backgroundColor: 'transparent',
-                              color: PURPLE,
-                              border: `1px solid ${PURPLE}`,
-                              borderRadius: 6,
-                              padding: '6px 14px',
-                              fontSize: 13,
-                              fontWeight: 500,
-                              textDecoration: 'none',
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
+                            className={buttonVariants({ variant: 'outline', size: 'sm' })}
                           >
                             <ExternalLink size={14} />
                             View on Companies House
@@ -931,37 +841,21 @@ export default function ProspectsPage() {
 
                         {prospect.status === 'Signed' &&
                           !prospect.converted_to_lead_id && (
-                            <button
+                            <Button
+                              size="sm"
                               onClick={() => handleConvertToLead(prospect)}
                               disabled={isConverting}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                backgroundColor: GREEN,
-                                color: 'var(--bg-primary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '6px 14px',
-                                fontSize: 13,
-                                fontWeight: 600,
-                                cursor: isConverting ? 'not-allowed' : 'pointer',
-                                opacity: isConverting ? 0.6 : 1,
-                                fontFamily: 'inherit',
-                              }}
                             >
                               {isConverting ? (
                                 <Loader2
                                   size={14}
-                                  style={{
-                                    animation: 'spin 1s linear infinite',
-                                  }}
+                                  style={{ animation: 'spin 1s linear infinite' }}
                                 />
                               ) : (
                                 <ArrowRightCircle size={14} />
                               )}
                               Convert to Lead
-                            </button>
+                            </Button>
                           )}
 
                         {prospect.converted_to_lead_id && (
@@ -983,30 +877,19 @@ export default function ProspectsPage() {
                         )}
 
                         {prospect.status !== 'Dead' && (
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleDismiss(prospect.id)}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              backgroundColor: 'transparent',
-                              color: RED,
-                              border: `1px solid rgba(248,113,113,0.3)`,
-                              borderRadius: 6,
-                              padding: '6px 14px',
-                              fontSize: 13,
-                              fontWeight: 500,
-                              cursor: 'pointer',
-                              marginLeft: 'auto',
-                              fontFamily: 'inherit',
-                            }}
+                            style={{ marginLeft: 'auto', color: RED, borderColor: `rgba(248,113,113,0.3)` }}
                           >
                             <XCircle size={14} />
                             Dismiss
-                          </button>
+                          </Button>
                         )}
                       </div>
-                    </div>
+                    </CardContent>
+                    </Card>
                   );
                 })
               )}
@@ -1028,24 +911,14 @@ function FilterButton({
   label: string;
 }) {
   return (
-    <button
+    <Button
+      variant={active ? 'default' : 'outline'}
+      size="sm"
       onClick={onClick}
-      style={{
-        backgroundColor: active ? 'var(--accent)' : 'transparent',
-        color: active ? 'var(--bg-primary)' : 'var(--text-primary)',
-        border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-        borderRadius: 6,
-        padding: '6px 14px',
-        fontSize: 13,
-        fontWeight: active ? 600 : 400,
-        cursor: 'pointer',
-        textTransform: 'capitalize',
-        transition: 'all 0.15s ease',
-        fontFamily: 'inherit',
-      }}
+      style={{ textTransform: 'capitalize' }}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -1059,45 +932,37 @@ function StatCard({
   value: string;
 }) {
   return (
-    <div
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        padding: 16,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: 'var(--bg-mid)',
-          borderRadius: 8,
-          padding: 10,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {icon}
-      </div>
-      <div>
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', fontWeight: 500, fontFamily: 'inherit' }}>
-          {label}
-        </p>
-        <p
+    <Card className="bl-card">
+      <CardContent className="p-4 flex items-center gap-3">
+        <div
           style={{
-            margin: '2px 0 0',
-            fontSize: 22,
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            fontFamily: 'inherit',
+            backgroundColor: 'var(--bg-mid)',
+            borderRadius: 8,
+            padding: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          {value}
-        </p>
-      </div>
-    </div>
+          {icon}
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', fontWeight: 500, fontFamily: 'inherit' }}>
+            {label}
+          </p>
+          <p
+            style={{
+              margin: '2px 0 0',
+              fontSize: 22,
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              fontFamily: 'inherit',
+            }}
+          >
+            {value}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
