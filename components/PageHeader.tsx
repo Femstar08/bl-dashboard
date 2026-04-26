@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { type LucideIcon } from 'lucide-react'
 
 interface PageHeaderProps {
@@ -7,7 +8,7 @@ interface PageHeaderProps {
   gradientFrom: string
   gradientTo: string
   accentColor: string
-  actions?: React.ReactNode
+  actions?: ReactNode
 }
 
 export default function PageHeader({
