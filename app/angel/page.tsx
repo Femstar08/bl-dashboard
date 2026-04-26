@@ -159,73 +159,6 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Tag({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        fontSize: 11,
-        fontWeight: 600,
-        padding: '2px 10px',
-        borderRadius: 999,
-        background: color + '22',
-        color: color,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
-    </span>
-  )
-}
-
-function Btn({
-  children,
-  variant = 'ghost',
-  onClick,
-  disabled,
-  type,
-  style: extraStyle,
-}: {
-  children: React.ReactNode
-  variant?: 'ghost' | 'teal' | 'danger' | 'amber'
-  onClick?: () => void
-  disabled?: boolean
-  type?: 'button' | 'submit'
-  style?: CSSProperties
-}) {
-  const base: CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-    padding: '7px 14px',
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-    transition: 'all .15s',
-    border: 'none',
-    background: 'transparent',
-    color: 'var(--text-primary)',
-  }
-  const variants: Record<string, CSSProperties> = {
-    ghost: { border: '1px solid var(--border)', color: 'var(--text-primary)' },
-    teal: { border: '1px solid var(--accent)', color: 'var(--accent)' },
-    danger: { border: `1px solid ${RED}`, color: RED },
-    amber: { border: `1px solid ${AMBER}`, color: AMBER },
-  }
-  return (
-    <button
-      type={type || 'button'}
-      onClick={onClick}
-      disabled={disabled}
-      style={{ ...base, ...variants[variant], ...extraStyle }}
-    >
-      {children}
-    </button>
-  )
-}
-
 function Input({
   value,
   onChange,
@@ -805,7 +738,11 @@ export default function AngelPage() {
             <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{inv.name}</span>
             {inv.company && <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{inv.company}</span>}
           </div>
-          {inv.source && <Tag label={inv.source} color={PURPLE} />}
+          {inv.source && (
+            <Badge style={{ background: PURPLE + '22', color: PURPLE, border: 'none' }}>
+              {inv.source}
+            </Badge>
+          )}
         </div>
 
         {/* Row 2 -- amounts */}
@@ -825,18 +762,17 @@ export default function AngelPage() {
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, alignItems: 'center' }}>
             {inv.next_action && <span style={{ color: 'var(--text-primary)' }}>{inv.next_action}</span>}
             {inv.follow_up_date && (
-              <span
+              <Badge
                 style={{
-                  color: ds === 'overdue' ? RED : ds === 'soon' ? AMBER : 'var(--text-muted)',
                   background: ds === 'overdue' ? RED + '22' : 'transparent',
-                  padding: ds === 'overdue' ? '2px 8px' : 0,
-                  borderRadius: 6,
+                  color: ds === 'overdue' ? RED : ds === 'soon' ? AMBER : 'var(--text-muted)',
+                  border: 'none',
                   fontWeight: ds === 'overdue' || ds === 'soon' ? 600 : 400,
                 }}
               >
                 {ds === 'overdue' ? 'Overdue ' : ds === 'soon' ? 'Due soon ' : ''}
                 {fmtDate(inv.follow_up_date)}
-              </span>
+              </Badge>
             )}
           </div>
         )}
@@ -856,18 +792,18 @@ export default function AngelPage() {
 
         {/* Row 5 -- action buttons */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Btn variant="ghost" onClick={() => startEdit(inv)}>
+          <Button variant="outline" onClick={() => startEdit(inv)}>
             <Edit3 size={14} /> Edit
-          </Btn>
+          </Button>
           {canAdvance && (
-            <Btn variant="teal" onClick={() => handleNextStage(inv)}>
+            <Button variant="outline" onClick={() => handleNextStage(inv)}>
               <ArrowRightCircle size={14} /> Next Stage
-            </Btn>
+            </Button>
           )}
           {canPass && (
-            <Btn variant="danger" onClick={() => handlePass(inv)} style={{ fontSize: 12, padding: '5px 10px' }}>
+            <Button variant="destructive" onClick={() => handlePass(inv)} style={{ fontSize: 12, padding: '5px 10px' }}>
               <XCircle size={13} /> Pass
-            </Btn>
+            </Button>
           )}
         </div>
 
@@ -916,20 +852,20 @@ export default function AngelPage() {
         </div>
         {renderFormFields(editForm, setEditForm, true)}
         <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-          <Btn
-            variant="teal"
+          <Button
+            variant="outline"
             onClick={handleEditSave}
             disabled={editSubmitting || !editForm.name.trim()}
             style={{ background: 'rgba(83,233,197,0.09)' }}
           >
             {editSubmitting ? 'Saving...' : 'Save'}
-          </Btn>
-          <Btn variant="ghost" onClick={() => setEditingId(null)}>
+          </Button>
+          <Button variant="outline" onClick={() => setEditingId(null)}>
             Cancel
-          </Btn>
-          <Btn variant="danger" onClick={() => handleDelete(inv)}>
+          </Button>
+          <Button variant="destructive" onClick={() => handleDelete(inv)}>
             <Trash2 size={14} /> Delete
-          </Btn>
+          </Button>
         </div>
       </div>
     )
@@ -939,7 +875,15 @@ export default function AngelPage() {
      RENDER
      ═══════════════════════════════════════════ */
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'inherit' }}>
+    <div className="bl-page">
+      <PageHeader
+        title="Angel"
+        subtitle="Angel investor and fundraising pipeline"
+        icon={Smile}
+        gradientFrom="#701A75"
+        gradientTo="#86198F"
+        accentColor="#E879F9"
+      />
       <main style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px 60px' }}>
         {/* Mutation error banner */}
         {mutationError && (
@@ -978,9 +922,9 @@ export default function AngelPage() {
             }}
           >
             <p>{error}</p>
-            <Btn variant="teal" onClick={loadInvestors}>
+            <Button variant="outline" onClick={loadInvestors}>
               Retry
-            </Btn>
+            </Button>
           </div>
         )}
 
@@ -1010,12 +954,12 @@ export default function AngelPage() {
                         outline: 'none',
                       }}
                     />
-                    <Btn variant="teal" onClick={handleSaveTarget} style={{ padding: '4px 10px', fontSize: 12 }}>
+                    <Button variant="outline" onClick={handleSaveTarget} style={{ padding: '4px 10px', fontSize: 12 }}>
                       Save
-                    </Btn>
-                    <Btn variant="ghost" onClick={() => setEditingTarget(false)} style={{ padding: '4px 10px', fontSize: 12 }}>
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditingTarget(false)} style={{ padding: '4px 10px', fontSize: 12 }}>
                       Cancel
-                    </Btn>
+                    </Button>
                   </>
                 ) : (
                   <>
@@ -1149,14 +1093,14 @@ export default function AngelPage() {
 
             {/* ── Section B: Add Investor ── */}
             <section style={{ marginBottom: 32 }}>
-              <Btn
-                variant={addFormOpen ? 'ghost' : 'teal'}
+              <Button
+                variant="outline"
                 onClick={() => setAddFormOpen(!addFormOpen)}
                 style={{ marginBottom: addFormOpen ? 14 : 0 }}
               >
                 {addFormOpen ? <X size={14} /> : <Plus size={14} />}
                 {addFormOpen ? 'Close' : '+ Add Investor'}
-              </Btn>
+              </Button>
 
               {addFormOpen && (
                 <Card className="bl-card">
@@ -1231,18 +1175,9 @@ export default function AngelPage() {
                         }}
                       />
                       <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{stage}</span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: stageColor,
-                          background: stageColor + '22',
-                          padding: '2px 10px',
-                          borderRadius: 999,
-                        }}
-                      >
+                      <Badge style={{ background: stageColor + '22', color: stageColor, border: 'none' }}>
                         {stageInvestors.length}
-                      </span>
+                      </Badge>
                     </button>
 
                     {/* Cards */}
