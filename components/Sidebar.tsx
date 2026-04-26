@@ -56,8 +56,8 @@ export default function Sidebar() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email ?? null)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null)
     })
   }, [])
 
@@ -65,11 +65,14 @@ export default function Sidebar() {
   const displayName = userEmail ? userEmail.split('@')[0] : 'User'
 
   const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href)
+    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      window.location.href = '/login'
+    }
   }
 
   return (
@@ -151,7 +154,25 @@ export default function Sidebar() {
                 if (!isOpen) {
                   return (
                     <Tooltip key={item.href}>
-                      <TooltipTrigger>{link}</TooltipTrigger>
+                      <TooltipTrigger
+                        render={
+                          <Link
+                            href={item.href}
+                            style={{ textDecoration: 'none' }}
+                            className={cn(
+                              'flex items-center justify-center rounded-lg px-2 py-[7px] transition-colors',
+                              active
+                                ? 'border border-[var(--accent)]/20 bg-[var(--accent)]/10'
+                                : 'hover:bg-[var(--bg-card)]'
+                            )}
+                          />
+                        }
+                      >
+                        <Icon
+                          size={14}
+                          className={cn('flex-shrink-0', active ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]')}
+                        />
+                      </TooltipTrigger>
                       <TooltipContent side="right" className="flex items-center gap-2">
                         <span className="font-semibold">{item.label}</span>
                         <span className="text-[10px] opacity-60">{group.label}</span>
@@ -185,13 +206,15 @@ export default function Sidebar() {
             </div>
           ) : (
             <Tooltip>
-              <TooltipTrigger>
-                <div
-                  className="flex h-7 w-7 cursor-default items-center justify-center rounded-full text-[11px] font-extrabold"
-                  style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
-                >
-                  {userInitial}
-                </div>
+              <TooltipTrigger
+                render={
+                  <div
+                    className="flex h-7 w-7 cursor-default items-center justify-center rounded-full text-[11px] font-extrabold"
+                    style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
+                  />
+                }
+              >
+                {userInitial}
               </TooltipTrigger>
               <TooltipContent side="right">{displayName}</TooltipContent>
             </Tooltip>
@@ -243,13 +266,16 @@ export default function Sidebar() {
             {/* Sign out icon (collapsed) */}
             {!isOpen && (
               <Tooltip>
-                <TooltipTrigger>
-                  <button
-                    onClick={handleLogout}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
-                  >
-                    <LogOut size={13} />
-                  </button>
+                <TooltipTrigger
+                  render={
+                    <button
+                      onClick={handleLogout}
+                      aria-label="Sign out"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
+                    />
+                  }
+                >
+                  <LogOut size={13} />
                 </TooltipTrigger>
                 <TooltipContent side="right">Sign out</TooltipContent>
               </Tooltip>
