@@ -8,6 +8,11 @@ import {
   PRIORITY_COLORS,
   STATUS_COLORS,
 } from '@/lib/types-requirements'
+import PageHeader from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { List } from 'lucide-react'
 import KpiBar from '@/components/shared/KpiBar'
 import ViewToggle from '@/components/shared/ViewToggle'
 import FilterBar from '@/components/shared/FilterBar'
@@ -247,73 +252,51 @@ export default function RequirementsPage() {
   }
 
   return (
-    <div style={{ fontFamily: 'inherit' }}>
-      {/* Title bar */}
+    <div className="bl-page">
+      <PageHeader
+        title="Requirements"
+        subtitle="Client and project requirement tracking"
+        icon={List}
+        gradientFrom="#1C1917"
+        gradientTo="#292524"
+        accentColor="#D4A574"
+      />
+      {/* Action bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '16px 16px 12px',
+        justifyContent: 'flex-end',
+        padding: '12px 16px 4px',
+        gap: 8,
       }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Requirements
-        </h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {requirements.length === 0 && (
-            <button
-              onClick={handleSeed}
-              style={{
-                padding: '7px 14px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                color: 'var(--text-muted)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Seed Data
-            </button>
-          )}
-          <ExportButton
-            data={filteredItems}
-            columns={[
-              { key: 'ref_id', label: 'ID' },
-              { key: 'phase', label: 'Phase' },
-              { key: 'domain', label: 'Domain' },
-              { key: 'requirement', label: 'Requirement' },
-              { key: 'priority', label: 'Priority' },
-              { key: 'status', label: 'Status' },
-              { key: 'complexity', label: 'Complexity' },
-              { key: 'assigned_to', label: 'Assigned' },
-            ]}
-            filename="requirements-export"
-            title="Requirements Status Report"
-            comments={comments}
-            phases={phases}
-            entityType="requirement"
-          />
-          <UploadButton entityType="requirement" onImportComplete={fetchRequirements} />
-          <SyncSettings entityType="requirement" onSyncComplete={fetchRequirements} />
-          <button
-            onClick={onCreate}
-            style={{
-              padding: '7px 14px',
-              background: 'var(--accent)',
-              border: 'none',
-              borderRadius: 8,
-              color: 'var(--bg-primary)',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            Add Requirement
-          </button>
-        </div>
+        {requirements.length === 0 && (
+          <Button variant="outline" onClick={handleSeed}>
+            Seed Data
+          </Button>
+        )}
+        <ExportButton
+          data={filteredItems}
+          columns={[
+            { key: 'ref_id', label: 'ID' },
+            { key: 'phase', label: 'Phase' },
+            { key: 'domain', label: 'Domain' },
+            { key: 'requirement', label: 'Requirement' },
+            { key: 'priority', label: 'Priority' },
+            { key: 'status', label: 'Status' },
+            { key: 'complexity', label: 'Complexity' },
+            { key: 'assigned_to', label: 'Assigned' },
+          ]}
+          filename="requirements-export"
+          title="Requirements Status Report"
+          comments={comments}
+          phases={phases}
+          entityType="requirement"
+        />
+        <UploadButton entityType="requirement" onImportComplete={fetchRequirements} />
+        <SyncSettings entityType="requirement" onSyncComplete={fetchRequirements} />
+        <Button onClick={onCreate}>
+          Add Requirement
+        </Button>
       </div>
 
       {/* KPI Bar */}
@@ -399,17 +382,9 @@ export default function RequirementsPage() {
               <option value="">Update Priority...</option>
               {REQ_PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
-            <button
-              onClick={() => setSelectedIds([])}
-              style={{
-                padding: '4px 10px', fontSize: 10, background: 'transparent',
-                border: '1px solid var(--border)', borderRadius: 6,
-                color: 'var(--text-muted)', cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
               Clear selection
-            </button>
+            </Button>
           </div>
         )}
       </div>
