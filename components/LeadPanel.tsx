@@ -189,7 +189,6 @@ function actionPlaceholder(type: string): string {
 export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPanelProps) {
   const [form, setForm] = useState<Lead>({ ...lead })
   const [editingField, setEditingField] = useState<string | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -211,14 +210,7 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
   const [actionForm, setActionForm] = useState({ type: 'Note', notes: '' })
   const [loggingAction, setLoggingAction] = useState(false)
 
-  /* ── Responsive ───────────────────────────────────────────────── */
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
 
   /* ── Fetch tags ───────────────────────────────────────────────── */
 
@@ -288,9 +280,8 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
-  function handleFieldBlur(field: string) {
+  function handleFieldBlur() {
     setEditingField(null)
-    // value already in form state
   }
 
   function handleFieldKeyDown(e: React.KeyboardEvent, field: string) {
@@ -463,7 +454,7 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
               style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
               value={displayVal}
               onChange={e => updateForm(field, e.target.value || null)}
-              onBlur={() => handleFieldBlur(field)}
+              onBlur={() => handleFieldBlur()}
               onKeyDown={e => {
                 if (e.key === 'Escape') setEditingField(null)
               }}
@@ -482,7 +473,7 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
                   updateForm(field, v || null)
                 }
               }}
-              onBlur={() => handleFieldBlur(field)}
+              onBlur={() => handleFieldBlur()}
               onKeyDown={e => handleFieldKeyDown(e, field)}
             />
           )
@@ -525,7 +516,6 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
 
   /* ── Render ──────────────────────────────────────────────────── */
 
-  const panelWidth = isMobile ? '100%' : 480
   const assignedTagIds = new Set(tags.map(t => t.id))
   const availableTags = allTags.filter(t => !assignedTagIds.has(t.id))
 
