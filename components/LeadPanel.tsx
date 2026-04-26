@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, CSSProperties } from 'react'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { X, Plus, Trash2, Calendar, Check, Tag as TagIcon, ExternalLink } from 'lucide-react'
 import { LEAD_STAGES, SOURCE_COLORS } from '@/lib/tokens'
 import { supabase } from '@/lib/supabase'
@@ -529,37 +530,12 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
   const availableTags = allTags.filter(t => !assignedTagIds.has(t.id))
 
   return (
-    <>
-      {/* Overlay */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.3)',
-          zIndex: 39,
-        }}
-      />
-
-      {/* Panel */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 52,
-          right: 0,
-          bottom: 0,
-          width: panelWidth,
-          background: 'var(--bg-mid)',
-          borderLeft: '1px solid var(--border)',
-          zIndex: 40,
-          overflowY: 'auto',
-          fontFamily: 'inherit',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
+    <Sheet open={true} onOpenChange={(open) => { if (!open) onClose() }}>
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        className="w-[480px] max-w-full overflow-y-auto p-0 flex flex-col"
+        style={{ background: 'var(--bg-mid)', borderLeft: '1px solid var(--border)' }}
       >
         {/* ── Header ──────────────────────────────────────────────── */}
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)' }}>
@@ -1304,7 +1280,7 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
             </>
           )}
         </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   )
 }

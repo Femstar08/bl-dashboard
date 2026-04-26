@@ -7,6 +7,12 @@ import { supabase } from '@/lib/supabase'
 import { LEAD_STAGES, LEAD_STAGE_COLORS, LEAD_SOURCES, SOURCE_COLORS, type LeadStage } from '@/lib/tokens'
 import LeadPanel from '@/components/LeadPanel'
 import type { Lead } from '@/components/LeadPanel'
+import PageHeader from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { LayoutDashboard } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────
 interface DbLead {
@@ -103,18 +109,6 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
   return <select value={value} onChange={e => onChange(e.target.value)} style={selectStyle}>{options.map(o => <option key={o}>{o}</option>)}</select>
 }
 
-function Btn({ onClick, children, variant = 'ghost', small }: { onClick?: () => void; children: React.ReactNode; variant?: 'ghost' | 'primary' | 'danger'; small?: boolean }) {
-  const styles: Record<string, React.CSSProperties> = {
-    ghost: { background: 'var(--bg-primary)', color: 'var(--text-muted)', border: '1px solid var(--border)' },
-    primary: { background: 'var(--accent)', color: 'var(--bg-primary)', border: '1px solid var(--accent)' },
-    danger: { background: 'transparent', color: '#F87171', border: '1px solid rgba(248,113,113,0.4)' },
-  }
-  return (
-    <button onClick={onClick} style={{ ...styles[variant], padding: small ? '4px 10px' : '8px 16px', borderRadius: 8, fontSize: small ? 11 : 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit', transition: 'opacity 0.15s' }}>
-      {children}
-    </button>
-  )
-}
 
 function SourceTag({ source }: { source: string | null }) {
   if (!source) return null
@@ -135,14 +129,21 @@ function KpiBar({ leads, milestones, content, consultingTarget }: { leads: DbLea
   const active = leads.filter(l => !['Lost', 'Dead', 'Passed'].includes(l.status)).length
 
   const mkCard = (icon: string, badgeText: string, title: string, value: string | number) => (
-    <div style={{ ...cardStyle, cursor: 'default' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <span className="material-symbols-outlined" style={{ color: 'var(--accent)' }}>{icon}</span>
-        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'var(--accent)', color: 'var(--bg-primary)' }}>{badgeText}</span>
-      </div>
-      <h3 style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{title}</h3>
-      <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>{value}</p>
-    </div>
+    <Card className="bl-card cursor-default">
+      <CardContent className="p-5">
+        <div className="mb-3 flex items-start justify-between">
+          <span className="material-symbols-outlined" style={{ color: 'var(--accent)' }}>{icon}</span>
+          <Badge
+            className="text-[10px] font-bold"
+            style={{ background: 'var(--accent)', color: 'var(--bg-primary)', border: 'none' }}
+          >
+            {badgeText}
+          </Badge>
+        </div>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">{title}</p>
+        <p className="text-2xl font-extrabold text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-manrope)' }}>{value}</p>
+      </CardContent>
+    </Card>
   )
 
   return (
@@ -330,8 +331,8 @@ function Pipeline({ leads, onUpdate, onAdd, onDelete }: {
             <Input placeholder="Notes (optional)" value={addForm.notes} onChange={v => setAddForm({ ...addForm, notes: v })} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Btn variant="primary" onClick={handleAdd}>Save</Btn>
-            <Btn onClick={() => setAddOpen(false)}>Cancel</Btn>
+            <Button size="sm" onClick={handleAdd}>Save</Button>
+            <Button variant="outline" size="sm" onClick={() => setAddOpen(false)}>Cancel</Button>
           </div>
         </div>
       )}
@@ -596,7 +597,8 @@ function RevenueTracker({ leads, revenue, onUpdateTarget }: {
   }
 
   return (
-    <section style={cardStyle}>
+    <Card className="bl-card">
+      <CardContent className="p-6">
       <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 24 }}>Revenue Targets</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div>
@@ -604,18 +606,14 @@ function RevenueTracker({ leads, revenue, onUpdateTarget }: {
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Consulting MRR</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>£{signedMrr.toLocaleString()} / £{revenue.consulting_target.toLocaleString()}</span>
           </div>
-          <div style={{ width: '100%', background: 'var(--bg-primary)', height: 10, borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{ background: 'var(--accent)', height: '100%', width: `${pctConsulting}%`, transition: 'width 1s', borderRadius: 99 }} />
-          </div>
+          <Progress value={pctConsulting} className="h-2" />
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>SaaS ARR (pilot)</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>£0 / £{revenue.saas_target.toLocaleString()}</span>
           </div>
-          <div style={{ width: '100%', background: 'var(--bg-primary)', height: 10, borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{ background: 'var(--accent)', height: '100%', width: `${pctSaas}%`, opacity: 0.6, transition: 'width 1s', borderRadius: 99 }} />
-          </div>
+          <Progress value={pctSaas} className="h-2 opacity-60" />
         </div>
         <div style={{ paddingTop: 20, borderTop: '1px solid var(--border)', display: 'flex', gap: 16 }}>
           <div style={{ flex: 1 }}>
@@ -628,7 +626,8 @@ function RevenueTracker({ leads, revenue, onUpdateTarget }: {
           </div>
         </div>
       </div>
-    </section>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -637,7 +636,8 @@ function Milestones({ milestones, onToggle }: { milestones: DbRoadmap[]; onToggl
   const tracks = ['Marketing', 'Platform', 'Consulting'] as const
 
   return (
-    <section style={cardStyle}>
+    <Card className="bl-card">
+      <CardContent className="p-6">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>30-Day Milestones</h2>
         <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-muted)' }}>
@@ -666,7 +666,8 @@ function Milestones({ milestones, onToggle }: { milestones: DbRoadmap[]; onToggl
           )
         })}
       </div>
-    </section>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -685,10 +686,11 @@ function ContentQueue({ content, setContent }: { content: ContentItem[]; setCont
   const statusColor = (s: string) => s === 'Published' ? 'var(--accent)' : s === 'Queued' ? '#F59E0B' : 'var(--text-muted)'
 
   return (
-    <section style={cardStyle}>
+    <Card className="bl-card">
+      <CardContent className="p-6">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>Content Queue</h2>
-        <button onClick={() => setOpen(!open)} style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 8, background: 'var(--bg-primary)', color: 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>Add Post</button>
+        <Button variant="outline" size="sm" onClick={() => setOpen(!open)}>Add Post</Button>
       </div>
 
       {open && (
@@ -700,8 +702,8 @@ function ContentQueue({ content, setContent }: { content: ContentItem[]; setCont
             <Input placeholder="Topic / post idea" value={form.topic} onChange={v => setForm({ ...form, topic: v })} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Btn variant="primary" onClick={add}>Save</Btn>
-            <Btn onClick={() => setOpen(false)}>Cancel</Btn>
+            <Button size="sm" onClick={add}>Save</Button>
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
           </div>
         </div>
       )}
@@ -752,7 +754,8 @@ function ContentQueue({ content, setContent }: { content: ContentItem[]; setCont
           </tbody>
         </table>
       </div>
-    </section>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -850,14 +853,22 @@ export default function Dashboard() {
         <div style={{ textAlign: 'center' }}>
           <p style={{ color: '#F87171', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Error loading dashboard</p>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16 }}>{error}</p>
-          <Btn variant="primary" onClick={loadData}>Retry</Btn>
+          <Button onClick={loadData}>Retry</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ maxWidth: 1440, margin: '0 auto', padding: '32px 24px 80px' }}>
+    <div className="bl-page">
+      <PageHeader
+        title="Dashboard"
+        subtitle={`${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · B&L Growth Overview`}
+        icon={LayoutDashboard}
+        gradientFrom="#0F1B35"
+        gradientTo="#162240"
+        accentColor="#53E9C5"
+      />
       <KpiBar leads={leads} milestones={milestones} content={content} consultingTarget={revenue.consulting_target} />
 
       {/* Agent Activity */}
