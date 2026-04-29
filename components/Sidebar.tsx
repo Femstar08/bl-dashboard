@@ -131,7 +131,7 @@ export default function Sidebar() {
                       isOpen ? '' : 'justify-center',
                       active
                         ? 'border border-[var(--accent)]/20 bg-[var(--accent)]/10'
-                        : 'hover:bg-[var(--bg-card)]'
+                        : 'hover:bg-[var(--bg-primary)]'
                     )}
                   >
                     <Icon
@@ -163,7 +163,7 @@ export default function Sidebar() {
                               'flex items-center justify-center rounded-lg px-2 py-[7px] transition-colors',
                               active
                                 ? 'border border-[var(--accent)]/20 bg-[var(--accent)]/10'
-                                : 'hover:bg-[var(--bg-card)]'
+                                : 'hover:bg-[var(--bg-primary)]'
                             )}
                           />
                         }

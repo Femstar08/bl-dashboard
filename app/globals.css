@@ -130,12 +130,17 @@ h1, h2, h3 {
   --popover-foreground: #0F1B35;
   --primary: #0F6E56;
   --primary-foreground: #FFFFFF;
+  --secondary: #E8EDF5;
+  --secondary-foreground: #0F1B35;
   --muted: #E8EDF5;
   --muted-foreground: #5C6478;
   --border: rgba(15,27,53,0.12);
+  --input: rgba(15,27,53,0.1);
   --accent: #0F6E56;
   --accent-foreground: #FFFFFF;
   --ring: #0F6E56;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
 }
 
 /* ── Shared component classes ────────────────────────────── */
