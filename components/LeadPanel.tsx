@@ -974,8 +974,8 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
                       <button
                         onClick={saveTask}
                         style={{
-                          background: '#53E9C5',
-                          color: '#0F1B35',
+                          background: 'var(--accent)',
+                          color: 'var(--bg-primary)',
                           border: 'none',
                           borderRadius: 6,
                           padding: '6px 14px',
@@ -1060,8 +1060,8 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
                   onClick={logAction}
                   disabled={loggingAction}
                   style={{
-                    background: '#53E9C5',
-                    color: '#0F1B35',
+                    background: 'var(--accent)',
+                    color: 'var(--bg-primary)',
                     border: 'none',
                     borderRadius: 6,
                     padding: '6px 14px',
@@ -1253,8 +1253,8 @@ export default function LeadPanel({ lead, onUpdate, onDelete, onClose }: LeadPan
                 onClick={handleSave}
                 disabled={saving}
                 style={{
-                  background: '#53E9C5',
-                  color: '#0F1B35',
+                  background: 'var(--accent)',
+                  color: 'var(--bg-primary)',
                   border: 'none',
                   borderRadius: 6,
                   padding: '8px 20px',

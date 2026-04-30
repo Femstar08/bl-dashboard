@@ -27,17 +27,6 @@
   --accent-dim: #0F1B35;
 }
 
-/* Default to dark before JS loads */
-:root {
-  --bg-primary: #0F1B35;
-  --bg-mid: #162240;
-  --bg-card: #1E2F52;
-  --text-primary: #E8EDF5;
-  --text-muted: #8892A4;
-  --border: rgba(83,233,197,0.15);
-  --accent: #53E9C5;
-  --accent-dim: #2BB89A;
-}
 
 body {
   min-height: max(884px, 100dvh);
